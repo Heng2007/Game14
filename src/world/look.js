@@ -47,6 +47,7 @@ function paintedMaterial(original) {
 // The hull is scaled about the bounds centre so it grows evenly.
 function addOutline(mesh) {
   const geo = mesh.geometry;
+  if (!geo) return;
   const pos = geo.getAttribute('position');
   if (!pos || pos.count < MIN_OUTLINE_VERTS) return;
   if (!geo.boundingBox) geo.computeBoundingBox();
