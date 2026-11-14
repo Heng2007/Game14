@@ -3,9 +3,25 @@
 
 import * as THREE from 'three';
 import { MAP_SIZE, ISLAND_RADIUS, LAKE_RADIUS, RIVER_WIDTH } from '../shared/positions.js';
+import { zoneHeight } from '../shared/positions.js';
+import { PALETTES } from '../core/palette.js';
 
 // Called once at startup. ctx = { renderer, scene, camera, ui }.
-export function init({ scene }) {
+export function init({ scene, legacy }) {
+  if (!legacy) {
+    scene.background = new THREE.Color(PALETTES.eden.sky);
+    scene.fog = new THREE.Fog(PALETTES.eden.sky, 38, 115);
+    scene.add(new THREE.HemisphereLight('#fff3d3', '#465e50', 2.4));
+    const sun = new THREE.DirectionalLight('#fff0ce', 2);
+    sun.position.set(-20, 40, 15);
+    scene.add(sun);
+    const geometry = new THREE.PlaneGeometry(220, 220, 120, 120).rotateX(-Math.PI / 2);
+    const vertices = geometry.attributes.position;
+    for (let i = 0; i < vertices.count; i++) vertices.setY(i, zoneHeight(vertices.getX(i), vertices.getZ(i)));
+    geometry.computeVertexNormals();
+    scene.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: PALETTES.eden.meadow, roughness: 1 })));
+    return;
+  }
   scene.background = new THREE.Color(0xcfe3ea);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x9bb07a, 2.5));
 

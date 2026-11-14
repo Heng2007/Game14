@@ -1,4 +1,35 @@
-# Game14
+# Speculum Mundi
+
+Steps 1–2 foundation: a first-person narrative exploration of a procedural,
+painting-inspired Eden. Open the triptych shutters to enter. The other two acts,
+decisions and puzzles have state slots, but are not playable chapters yet.
+
+```sh
+npm install
+npm run dev
+npm run build
+npm run preview
+```
+
+WASD moves, mouse looks, E / left click interacts, Q chooses the secondary
+response, M mutes audio and speech, Esc releases the pointer. Click **Return to
+the garden** to resume. Audio and speech are unlocked by the opening click.
+Requires a desktop browser with WebGL and pointer lock.
+
+`src/core/GameState.js` owns validated zones, decisions and puzzle completion.
+`FirstPersonController.js` provides damped motion, terrain clamping and sliding
+circle collisions. `src/shared/positions.js` preserves the legacy layout and
+adds zone layouts. `src/core/procedural.js` builds lathed fountains, tube branches,
+berries, bubbles and canvas-painted layered scenery without external models.
+The palette is interpretive: **no reference images were supplied**. See
+[`docs/ASSET_CATALOG.md`](docs/ASSET_CATALOG.md) for the inspection inventory.
+
+`?fly` retains the orbit-camera study mode. `?legacy` retains the original
+third-person fruit prototype (including its optional GLB loader and stand-ins).
+The new game does not invoke that loader. Build/dev/preview scripts are unchanged.
+Core checks: `node --test src/core/core.test.js`.
+
+## Original prototype notes (historical, legacy mode only)
 
 A 3D browser game set inside Hieronymus Bosch's *The Garden of Earthly Delights*
 (about 1500, public domain). You ride through the garden, collect giant fruit,

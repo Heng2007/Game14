@@ -1,0 +1,24 @@
+#ui { color: #eee1bc; font-family: Georgia, 'Times New Roman', serif; }
+.sm-hud { position: absolute; top: 38px; left: 44px; color: #283f3e; }
+.sm-hud span, .sm-title > span { font: 11px sans-serif; letter-spacing: .34em; }
+.sm-hud h2 { font-size: 30px; font-weight: normal; margin: 12px 0; }
+.sm-hud p { font: 9px sans-serif; letter-spacing: .23em; }
+.sm-crosshair { position: absolute; top: 50%; left: 50%; opacity: .7; font-size: 18px; }
+.sm-caption { position: absolute; bottom: 86px; left: 15%; width: 70%; text-align: center; font-style: italic; font-size: 20px; text-shadow: 0 1px 8px #283f3e; }
+.sm-controls { position: absolute; bottom: 30px; width: 100%; text-align: center; font: 10px sans-serif; letter-spacing: .12em; color: #fff5db; text-shadow: 0 1px 4px #283f3e; }
+.sm-menu { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: auto; overflow: hidden; }
+.sm-menu[hidden], .sm-resume[hidden] { display: none; }
+.sm-shutter { position: absolute; top: 0; bottom: 0; width: 50%; background: repeating-linear-gradient(90deg, #172e2b18 0 1px, transparent 1px 7px), radial-gradient(ellipse at bottom, #496252, #1d3331 80%); border: 1px solid #a5915f66; box-sizing: border-box; transition: transform 1.4s ease-in-out; }
+.sm-shutter::after { content: ''; position: absolute; inset: 24px; border: 1px solid #b7a17455; border-radius: 45% 45% 0 0; }
+.sm-left { left: 0; }.sm-right { right: 0; }
+.sm-title { z-index: 1; text-align: center; transition: opacity .5s; padding: 24px; }
+.sm-title h1 { font-size: clamp(56px, 8vw, 106px); font-weight: normal; line-height: .95; margin: 30px 0 20px; letter-spacing: -.045em; }
+.sm-title h1 em { font-weight: normal; color: #d9969d; }
+.sm-title p { line-height: 1.7; font-size: 16px; color: #d7cfb5; }
+.sm-rule { margin: 20px; color: #b7a174; }
+.sm-open, .sm-resume { pointer-events: auto; cursor: pointer; border: 1px solid #b7a174; color: #eee1bc; background: #283f3e; padding: 17px 28px; font: 16px Georgia, serif; }
+.sm-open { display: block; margin: 28px auto 22px; min-width: 240px; }.sm-open:hover, .sm-resume:hover { background: #456052; }.sm-open b { padding-left: 28px; font-weight: normal; }
+.sm-title small { font: 8px sans-serif; letter-spacing: .19em; color: #b9b49e; }
+.sm-opening { pointer-events: none; }.sm-opening .sm-left { transform: translateX(-100%); }.sm-opening .sm-right { transform: translateX(100%); }.sm-opening .sm-title { opacity: 0; }
+.sm-resume { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+@media (max-width: 640px) { .sm-hud { top: 20px; left: 20px; }.sm-controls { font-size: 8px; padding: 0 15px; box-sizing: border-box; line-height: 1.8; }.sm-caption { font-size: 17px; } }

@@ -9,6 +9,19 @@
 // axes, which cuts the land into four corners. A tower stands in each corner.
 
 export const MAP_SIZE = 400;
+export const ZONES = {
+  ACT_I_EDEN: { spawn: { x: 0, z: 20 }, bounds: { radius: 48 }, amplitude: 0.55 },
+  ACT_II_GARDEN: { spawn: { x: 0, z: 20 }, bounds: { minX: -48, maxX: 48, minZ: -48, maxZ: 48 }, amplitude: 0.4 },
+  ACT_III_HELL: { spawn: { x: 0, z: 20 }, bounds: { radius: 48 }, amplitude: 0.25 },
+  FINALE: { spawn: { x: 0, z: 20 }, bounds: { radius: 48 }, amplitude: 0 },
+};
+export const EDEN_OBSTACLES = [
+  { x: 0, z: 0, radius: 4 }, { x: -9, z: 9, radius: 2.5 },
+  { x: 10, z: 3, radius: 2 },
+];
+export function zoneHeight(x, z, zone = 'ACT_I_EDEN') {
+  return Math.sin(x * 0.09) * Math.cos(z * 0.08) * ZONES[zone].amplitude;
+}
 export const ISLAND_RADIUS = 12;
 export const LAKE_RADIUS = 45;
 export const RIVER_WIDTH = 8;
