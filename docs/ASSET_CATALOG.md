@@ -38,6 +38,10 @@ translucent spheres and brush-stroke hillside silhouettes, not claimed replicas.
 - `src/core/procedural.js`: composite Three.js objects and canvas backdrops.
 - `src/core/core.test.js`: state and navigation checks.
 - `src/game/speculum.js`, `src/game/speculum.css`: triptych opening and Eden vignette.
+- `src/world/TriptychWorld.js`: contiguous three-act terrain, landmarks,
+  instanced hybrid mounts, lighting transitions and hinged grisaille shutters.
+- `src/shaders/BoschOilShader.js`: depth/normal Sobel outlines, softly stepped
+  colour, procedural craquelure, canvas/oak grain and composer pipeline.
 - `docs/ASSET_CATALOG.md`: this inventory.
 
 ## Panel palettes
@@ -48,6 +52,8 @@ translucent spheres and brush-stroke hillside silhouettes, not claimed replicas.
 | Garden | flesh `#e7b4a3`, berry `#b83e47`, bubble `#bad9df`, meadow `#6c914e` |
 | Hell | night `#191e25`, ember `#c76436`, sulfur `#cbbb65`, ice `#8babb5` |
 
-No external `.glb`/`.gltf` assets are used by Speculum Mundi. Garden, Hell and
-Finale layouts are state/layout groundwork only. `node_modules/` and `dist/` are
+No external `.glb`/`.gltf` assets are used by Speculum Mundi. Eden, Garden and Hell
+now share a contiguous walkable heightfield; full puzzle solutions and Finale
+remain future work. All shutter art, score notation and fire silhouettes are
+painted on runtime canvases. `node_modules/` and `dist/` are
 generated dependency/build output, not source assets.

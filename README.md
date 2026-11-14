@@ -1,8 +1,10 @@
 # Speculum Mundi
 
-Steps 1–2 foundation: a first-person narrative exploration of a procedural,
-painting-inspired Eden. Open the triptych shutters to enter. The other two acts,
-decisions and puzzles have state slots, but are not playable chapters yet.
+A first-person exploration of three contiguous procedural, painting-inspired
+panels: Eden (-100…-35), Earthly Delights (-35…35), and Musical Hell (35…100).
+Open the oak triptych to enter Eden, then follow the pale eastward path across
+the meadow's river bridge and down into Hell. Sky, fog, lighting and varnish
+blend as you cross each panel. No external models or image downloads are used.
 
 ```sh
 npm install
@@ -27,7 +29,27 @@ The palette is interpretive: **no reference images were supplied**. See
 `?fly` retains the orbit-camera study mode. `?legacy` retains the original
 third-person fruit prototype (including its optional GLB loader and stand-ins).
 The new game does not invoke that loader. Build/dev/preview scripts are unchanged.
-Core checks: `node --test src/core/core.test.js`.
+Core checks: `node --test`. No lint or typecheck stages are configured.
+
+## The painted triptych
+
+`src/world/TriptychWorld.js` owns terrain, hinged grisaille shutters, landmarks,
+hybrid mount animation and nearby-object interactions. E rotates the nearest
+stone ring, peels a strawberry segment, or reads the four-note score. These are
+tactile vignettes, not completed puzzles; decision/puzzle flags remain untouched.
+The central lake, island, diagonal bridges and rivers reuse the original layout
+proportions at 0.36 scale, with additional river crossings for a continuous path.
+The Hell lake is frozen and walkable; unfrozen Garden water blocks movement.
+
+`src/shaders/BoschOilShader.js` exports a full-screen oil shader and composer
+wrapper: softly stepped luminance, Sobel linear-depth/view-normal contours,
+procedural crack/canvas/oak grain, varnish and vignette. Normals and depth share
+a half-resolution buffer; colour passes through EffectComposer and OutputPass.
+All opaque procedural objects use diffuse Lambert materials. Transparent glass
+also uses diffuse shading, without specular highlights. Resize updates all targets.
+`?legacy` bypasses the composer. In dev, `window.__speculum` exposes state,
+controller, renderer and world for diagnostics. The shutter click captures
+pointer lock while user activation is valid; movement starts after the entrance.
 
 ## Original prototype notes (historical, legacy mode only)
 

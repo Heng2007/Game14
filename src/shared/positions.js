@@ -46,6 +46,60 @@ export const BRIDGES = [45, 135, 225, 315].map((deg) => {
   return { name: 'bridge', x: r * Math.sin(a), z: r * Math.cos(a), rotY: a };
 });
 
+// The original lake/island/river proportions, reduced to fit the middle panel.
+const PANEL_SCALE = 0.36;
+export const TRIPTYCH = {
+  bounds: { minX: -100, maxX: 100, minZ: -40, maxZ: 40 },
+  acts: { eden: [-100, -35], garden: [-35, 35], hell: [35, 100] },
+  spawn: { x: -92, z: 26 },
+  shutters: { x: -110, z: 26 },
+  edenFountain: { x: -72, z: -5 }, rings: { x: -60, z: 9 }, dragonTree: { x: -38, z: -5 },
+  pool: { x: 0, z: 0, radius: LAKE_RADIUS * PANEL_SCALE, island: ISLAND_RADIUS * PANEL_SCALE },
+  riverWidth: RIVER_WIDTH * PANEL_SCALE,
+  bridges: [
+    ...BRIDGES.map(b => ({ x: b.x * PANEL_SCALE, z: b.z * PANEL_SCALE, rotY: b.rotY,
+      length: BRIDGE_LENGTH * PANEL_SCALE + 1.5, width: BRIDGE_WIDTH * PANEL_SCALE + 1.4 })),
+    { x: 0, z: 26, rotY: Math.PI / 2, length: 7, width: 5 },
+    { x: 0, z: -26, rotY: Math.PI / 2, length: 7, width: 5 },
+    { x: -26, z: 0, rotY: 0, length: 7, width: 5 },
+    { x: 26, z: 0, rotY: 0, length: 7, width: 5 },
+  ],
+  towers: [{ x: -22, z: -18 }, { x: 22, z: -18 }, { x: -21, z: 15 }, { x: 22, z: 15 }],
+  sphere: { x: -21, z: 4 }, strawberry: { x: 23, z: -5 }, owl: { x: 0, z: 0 },
+  frozenLake: { x: 59, z: -13 }, lute: { x: 63, z: 5 }, harp: { x: 73, z: 2 },
+  score: { x: 64, z: 13 }, treeMan: { x: 81, z: -17 }, throne: { x: 95, z: 2 },
+};
+export function zoneAtX(x) {
+  if (x < -35) return 'ACT_I_EDEN';
+  if (x < 35) return 'ACT_II_GARDEN';
+  return 'ACT_III_HELL';
+}
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+export function triptychHeight(x, z) {
+  const eden = (Math.sin(x * 0.16) * Math.cos(z * 0.12) * 1.4 + 0.5) * (1 - smooth(-48, -34, x));
+  const descent = -8 * smooth(35, 55, x);
+  const height = eden + descent + Math.sin(z * 0.16) * 0.16 * smooth(45, 60, x);
+  const basin = Math.hypot(x - TRIPTYCH.edenFountain.x,z - TRIPTYCH.edenFountain.z);
+  const basinHeight = Math.sin(-72 * 0.16) * Math.cos(-5 * 0.12) * 1.4 + 0.5;
+  return basinHeight * (1 - smooth(7,10,basin)) + height * smooth(7,10,basin);
+}
+export function onTriptychBridge(x, z, margin = 0) {
+  return TRIPTYCH.bridges.some(b => {
+    const dx = x - b.x, dz = z - b.z, c = Math.cos(b.rotY), s = Math.sin(b.rotY);
+    return Math.abs(dx * c - dz * s) <= b.width / 2 - margin &&
+      Math.abs(dx * s + dz * c) <= b.length / 2 - margin;
+  });
+}
+export function triptychWater(x, z) {
+  if (x <= -35 || x >= 35 || Math.abs(z) > 40) return false;
+  const r = Math.hypot(x, z);
+  if (r < TRIPTYCH.pool.island) return false;
+  return r < TRIPTYCH.pool.radius || Math.abs(x) < TRIPTYCH.riverWidth / 2 || Math.abs(z) < TRIPTYCH.riverWidth / 2;
+}
+export function triptychBlocked(x, z) {
+  return triptychWater(x, z) && !onTriptychBridge(x, z, 0.4);
+}
+
 export const SCENERY = [
   { name: 'tree', x: 60, z: 90, rotY: 0 },
   { name: 'tree', x: -85, z: 60, rotY: 1 },

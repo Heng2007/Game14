@@ -8,6 +8,14 @@
 .sm-controls { position: absolute; bottom: 30px; width: 100%; text-align: center; font: 10px sans-serif; letter-spacing: .12em; color: #fff5db; text-shadow: 0 1px 4px #283f3e; }
 .sm-menu { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: auto; overflow: hidden; }
 .sm-menu[hidden], .sm-resume[hidden] { display: none; }
+.sm-hud.sm-dark { color: #eee1bc; }
+#ui.sm-at-shutters .sm-hud, #ui.sm-at-shutters .sm-caption, #ui.sm-at-shutters .sm-controls, #ui.sm-at-shutters .sm-crosshair { visibility: hidden; }
+.sm-triptych-menu { align-items: end; background: linear-gradient(transparent 45%, #122420cc); }
+.sm-triptych-menu .sm-title { padding-bottom: 28px; }
+.sm-triptych-menu .sm-title h1 { font-size: clamp(38px, 5vw, 70px); margin: 14px 0 8px; }
+.sm-triptych-menu .sm-title p { margin: 8px 0; }
+.sm-triptych-menu .sm-open { margin: 16px auto; }
+.sm-triptych-menu.sm-opening { background: transparent; }
 .sm-shutter { position: absolute; top: 0; bottom: 0; width: 50%; background: repeating-linear-gradient(90deg, #172e2b18 0 1px, transparent 1px 7px), radial-gradient(ellipse at bottom, #496252, #1d3331 80%); border: 1px solid #a5915f66; box-sizing: border-box; transition: transform 1.4s ease-in-out; }
 .sm-shutter::after { content: ''; position: absolute; inset: 24px; border: 1px solid #b7a17455; border-radius: 45% 45% 0 0; }
 .sm-left { left: 0; }.sm-right { right: 0; }

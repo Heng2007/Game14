@@ -2,9 +2,9 @@ import { Vector3 } from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
 export class FirstPersonController extends EventTarget {
-  constructor(camera, element, { getHeight, bounds, obstacles = [], eyeHeight = 1.7 }) {
+  constructor(camera, element, { getHeight, bounds, obstacles = [], eyeHeight = 1.7, blocked = () => false }) {
     super();
-    Object.assign(this, { camera, getHeight, bounds, obstacles, eyeHeight });
+    Object.assign(this, { camera, getHeight, bounds, obstacles, eyeHeight, blocked });
     this.controls = new PointerLockControls(camera, element);
     this.keys = new Set();
     this.velocity = new Vector3();
@@ -58,8 +58,18 @@ export class FirstPersonController extends EventTarget {
     const direction = new Vector3(Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA')), 0,
       Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS'))).normalize().multiplyScalar(4);
     this.velocity.lerp(direction, 1 - Math.exp(-9 * dt));
+    const previous = this.camera.position.clone();
     this.controls.moveRight(this.velocity.x * dt);
     this.controls.moveForward(this.velocity.z * dt);
     this.constrain(this.camera.position);
+    if (this.blocked?.(this.camera.position.x, this.camera.position.z)) {
+      const next = this.camera.position.clone();
+      this.camera.position.set(next.x, next.y, previous.z);
+      if (this.blocked(this.camera.position.x, this.camera.position.z)) {
+        this.camera.position.set(previous.x, next.y, next.z);
+        if (this.blocked(this.camera.position.x, this.camera.position.z)) this.camera.position.copy(previous);
+      }
+      this.camera.position.y = this.getHeight(this.camera.position.x, this.camera.position.z) + this.eyeHeight;
+    }
   }
 }
