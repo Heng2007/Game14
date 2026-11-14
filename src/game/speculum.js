@@ -6,13 +6,16 @@ import { DiegeticText } from '../narrative/DiegeticText.js';
 import { NarrativeTriggers, OPENING_LINE } from '../narrative/script.js';
 import { SoundManager } from '../audio/SoundManager.js';
 import { FinaleSequence } from '../core/FinaleSequence.js';
+import { OtterCompanion } from '../core/otter.js';
 import './speculum.css';
 
 export const state = new GameState();
 export let controller;
 let world, hud, caption, entered = false;
 let diegetic;
-let finale;
+let finale, startFinale, otter;
+const OTTER_START = { x: TRIPTYCH.spawn.x + 4, z: TRIPTYCH.spawn.z + 1.5 };
+const THRONE_REACH = 6;
 const sound = new SoundManager();
 const triggers = new NarrativeTriggers();
 const titles = {
@@ -50,10 +53,17 @@ export function init({ camera, renderer, scene, ui }) {
   const menu=ui.querySelector('.sm-menu'),resume=ui.querySelector('.sm-resume');
   ui.classList.add('sm-at-shutters');
   hud=ui.querySelector('.sm-hud');caption=ui.querySelector('.sm-caption');
-  const status=ui.querySelector('.sm-status');
+  const statusEl=ui.querySelector('.sm-status');
+  let statusTimer;
+  const status={set textContent(text){
+    statusEl.textContent=text;clearTimeout(statusTimer);
+    if(text)statusTimer=setTimeout(()=>{statusEl.textContent='';},5000);
+  }};
   const prompt=ui.querySelector('.sm-prompt'),ending=ui.querySelector('.sm-finale');
   diegetic=new DiegeticText(scene,camera,audio.narrator,caption);
   world.configureGameplay(state,sound);
+  otter=new OtterCompanion(scene,{getHeight:triptychHeight,obstacles:world.obstacles,bounds:TRIPTYCH.bounds});
+  otter.reset(OTTER_START.x,OTTER_START.z);
   audio.narrator.addEventListener('line-start',()=>{sound.ducked=true;});
   audio.narrator.addEventListener('line-end',()=>{sound.ducked=false;});
   finale=new FinaleSequence({camera,controller,world,state,onComplete:text=>{
@@ -61,6 +71,13 @@ export function init({ camera, renderer, scene, ui }) {
     ending.querySelector('p').textContent=text;ending.hidden=false;resume.hidden=true;
     audio.speak(text,{id:'epilogue',zone:'ACT_I_EDEN'});
   }});
+  startFinale=()=>{
+    if(finale.active)return;
+    audio.narrator.reset();diegetic.clear();prompt.textContent='';status.textContent='';
+    hud.querySelector('h2').textContent=titles.FINALE[0];hud.querySelector('p').textContent=titles.FINALE[1];
+    hud.classList.remove('sm-dark');
+    finale.start();
+  };
   function open() {
     audio.unlock();sound.start(audio.getContext(),audio.getMasterGain());menu.classList.add('sm-opening');
     audio.speak(OPENING_LINE.text,OPENING_LINE);
@@ -68,6 +85,7 @@ export function init({ camera, renderer, scene, ui }) {
     controller.lock();
     world.open(()=>{
       entered=true;menu.hidden=true;ui.classList.remove('sm-at-shutters');setZone('ACT_I_EDEN');
+      status.textContent='An otter with a laptop decides to follow you.';
       if(!controller.controls.isLocked)resume.hidden=false;
     });
   }
@@ -75,7 +93,7 @@ export function init({ camera, renderer, scene, ui }) {
   ui.querySelector('.sm-again').addEventListener('click',()=>{
     entered=false;ending.hidden=true;resume.hidden=true;status.textContent='';prompt.textContent='';
     state.reset();triggers.reset();audio.narrator.reset();diegetic.clear();sound.stop();sound.ducked=false;
-    world.resetGameplay();finale.reset();controller.keys.clear();controller.velocity.set(0,0,0);
+    world.resetGameplay();finale.reset();otter.reset(OTTER_START.x,OTTER_START.z);controller.keys.clear();controller.velocity.set(0,0,0);
     camera.fov=60;camera.updateProjectionMatrix();camera.position.set(-126,8,26);camera.rotation.set(0,-Math.PI/2,0);
     menu.hidden=false;ui.classList.add('sm-at-shutters');open();
   });
@@ -90,8 +108,9 @@ export function init({ camera, renderer, scene, ui }) {
   controller.addEventListener('mute',()=>{status.textContent=audio.toggleMute()?'Voice muted · subtitles remain on':'Voice restored';});
   document.addEventListener('keydown',event=>{
     if(event.repeat||!entered||finale.active)return;
-    if(event.code==='Digit0'){audio.narrator.reset();diegetic.clear();prompt.textContent='';finale.start();return;}
-    const destination={Digit7:TRIPTYCH.spawn,Digit8:{x:-29,z:26},Digit9:{x:43,z:26}}[event.code];
+    // Developer shortcuts (npm run dev only): 7/8/9 jump to an act, 0 starts the finale.
+    if(import.meta.env.DEV&&event.code==='Digit0'){startFinale();return;}
+    const destination=import.meta.env.DEV&&{Digit7:TRIPTYCH.spawn,Digit8:{x:-29,z:26},Digit9:{x:43,z:26}}[event.code];
     if(destination){
       controller.keys.clear();controller.velocity.set(0,0,0);camera.position.set(destination.x,triptychHeight(destination.x,destination.z)+1.7,destination.z);
       camera.rotation.set(0,-Math.PI/2,0);setZone(zoneAtX(destination.x));return;
@@ -105,14 +124,15 @@ export function init({ camera, renderer, scene, ui }) {
     menu.hidden=true;entered=true;ui.classList.remove('sm-at-shutters');setZone('ACT_II_GARDEN');
     ui.querySelector('.sm-controls').textContent='STUDY MODE · DRAG TO ORBIT / SCROLL TO ZOOM';
   }
-  if(import.meta.env.DEV)window.__speculum={state,controller,renderer,world,narrator:audio.narrator,diegetic,triggers,sound,finale};
+  if(import.meta.env.DEV)window.__speculum={state,controller,renderer,world,narrator:audio.narrator,diegetic,triggers,sound,finale,otter};
 }
 export function update(dt) {
   audio.narrator.update();diegetic?.update(dt);
+  // The otter follows while you walk; it waits at the gate and watches the finale.
+  otter?.update(dt,entered&&!finale.active?controller.camera:null);
   if(!entered)return;
-  if(!finale.active&&Math.hypot(controller.camera.position.x-TRIPTYCH.throne.x,controller.camera.position.z-TRIPTYCH.throne.z)<4){
-    audio.narrator.reset();diegetic.clear();world.prompt.textContent='';finale.start();
-  }
+  // The throne blocks walking within about 3 m, so the ending starts a little further out.
+  if(!finale.active&&Math.hypot(controller.camera.position.x-TRIPTYCH.throne.x,controller.camera.position.z-TRIPTYCH.throne.z)<THRONE_REACH)startFinale();
   if(finale.active){finale.update(dt);sound.update(controller.camera.position.x);return;}
   controller.update(dt);
   sound.update(controller.camera.position.x);

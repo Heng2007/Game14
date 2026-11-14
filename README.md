@@ -1,202 +1,85 @@
-# Speculum Mundi
+# Game14 — Speculum Mundi
 
-A first-person exploration of three contiguous procedural, painting-inspired
-panels: Eden (-100…-35), Earthly Delights (-35…35), and Musical Hell (35…100).
-Open the oak triptych to enter Eden, then follow the pale eastward path across
-the meadow's river bridge and down into Hell. Sky, fog, lighting and varnish
-blend as you cross each panel. No external models or image downloads are used.
+A first-person walk through Hieronymus Bosch's *The Garden of Earthly Delights*
+(about 1500, public domain), in the browser. You open the shutters and cross
+the three panels of the painting: Eden, the Garden, and Hell. A narrator speaks
+as you walk, small puzzles and three choices shape the epilogue, and an otter
+with a laptop keeps you company the whole way.
 
-```sh
-npm install
-npm run dev
-npm run build
-npm run preview
-```
-
-WASD moves, mouse looks, E / left click interacts, Q chooses the secondary
-response, M mutes audio and speech, Esc releases the pointer. Click **Return to
-the garden** to resume. Audio and speech are unlocked by the opening click.
-Requires a desktop browser with WebGL and pointer lock.
-
-`src/core/GameState.js` owns validated zones, decisions and puzzle completion.
-`FirstPersonController.js` provides damped motion, terrain clamping and sliding
-circle collisions. `src/shared/positions.js` preserves the legacy layout and
-adds zone layouts. `src/core/procedural.js` builds lathed fountains, tube branches,
-berries, bubbles and canvas-painted layered scenery without external models.
-The palette is interpretive: **no reference images were supplied**. See
-[`docs/ASSET_CATALOG.md`](docs/ASSET_CATALOG.md) for the inspection inventory.
-
-`?fly` retains the orbit-camera study mode. `?legacy` retains the original
-third-person fruit prototype (including its optional GLB loader and stand-ins).
-The new game does not invoke that loader. Build/dev/preview scripts are unchanged.
-Core checks: `node --test`. No lint or typecheck stages are configured.
-
-## The painted triptych
-
-`src/world/TriptychWorld.js` owns terrain, hinged grisaille shutters, landmarks,
-hybrid mount animation and nearby-object interactions. E rotates the nearest
-stone ring, peels a strawberry segment, or reads the four-note score. These are
-tactile puzzles: align the three red ring markers north, touch the sphere, peel
-all eight fruit segments, and play the lute's score with **1 D / 2 F / 3 E / 4 A**.
-E/Q at the Dragon Tree, Owl and tavern candle record irreversible choices for
-this run. Nearby prompts describe each action. A wrong lute note resets the phrase.
-The central lake, island, diagonal bridges and rivers reuse the original layout
-proportions at 0.36 scale, with additional river crossings for a continuous path.
-The Hell lake is frozen and walkable; unfrozen Garden water blocks movement.
-
-`src/shaders/BoschOilShader.js` exports a full-screen oil shader and composer
-wrapper: softly stepped luminance, Sobel linear-depth/view-normal contours,
-procedural crack/canvas/oak grain, varnish and vignette. Normals and depth share
-a half-resolution buffer; colour passes through EffectComposer and OutputPass.
-All opaque procedural objects use diffuse Lambert materials. Transparent glass
-also uses diffuse shading, without specular highlights. Resize updates all targets.
-`?legacy` bypasses the composer. In dev, `window.__speculum` exposes state,
-controller, renderer and world for diagnostics. The shutter click captures
-pointer lock while user activation is valid; movement starts after the entrance.
-
-## Sound and closing mirror
-
-`src/audio/SoundManager.js` synthesizes dawn fifths and filtered water noise,
-a detuned choral pad, and a sub-bass Hell drone in the shared Web Audio context.
-Fruit/glass interactions ring additive bells; lute strings excite filtered noise
-and pitched partials. Beds crossfade at panel borders and duck during narration.
-M mutes both sound and speech. No audio downloads or external recordings are used.
-
-Walking within four metres of the bird throne begins a fourteen-second return
-across the triptych. Movement and mouse look pause, the oak doors close, and an
-epilogue reflects all three choices, including any left unanswered. **Re-open the
-Triptych (Play Again)** resets state, puzzle props, narrative triggers and audio
-without reloading the page, then opens the doors again.
-
-Debug keys remain enabled: **7** Eden, **8** Garden, **9** Hell, **0** Finale.
-They work after entry; 0 starts the same closing sequence without visiting the
-throne. `window.__speculum` in dev also exposes sound diagnostics and finale phase.
-
-## Original prototype notes (historical, legacy mode only)
-
-A 3D browser game set inside Hieronymus Bosch's *The Garden of Earthly Delights*
-(about 1500, public domain). You ride through the garden, collect giant fruit,
-and carry it to the pink fountain in the middle of the lake.
-
-Runs on localhost only for now. No server, no leaderboard, no multiplayer.
-
-## Tech
-
-- **Three.js** for 3D graphics in the browser.
-- **Vite** as the dev server (`npm run dev`, then open the localhost link).
-- **Meshy** to generate the 3D models, exported as `.glb` files.
-- Browser built-in audio (Web Audio) for sound and music.
+Runs on localhost. No server, no accounts.
 
 ## Run it
 
-Nothing runs yet. Issue #4 creates the project. After that:
-
 ```
 npm install
 npm run dev
 ```
 
-Open the localhost link it prints. Add `?fly` to the link for a free camera.
+Open the localhost link it prints and click **Open the Triptych**.
 
-## Who owns which files
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the game with live reload |
+| `npm test` | Run the logic tests |
+| `npm run build` | Build the production version into `dist/` |
 
-The three parts are built at the same time, each on its own branch. To avoid
-conflicts, each part edits only its own folders.
+## Controls
 
-| Path | Owner | What it is |
-| --- | --- | --- |
-| `src/world/` , `public/textures/` | Part 1 | Ground, sky, water, the painted look |
-| `src/game/` , `public/audio/` | Part 2 | Player, camera, fruit, score, menus, sound |
-| `public/models/` | Part 3 | The `.glb` model files |
-| `src/main.js`, `src/shared/`, `index.html`, `package.json` | Shared | Do not edit in a part branch; change them in a separate small pull request |
+| Key | Action |
+| --- | --- |
+| W A S D | Walk |
+| Mouse | Look (click the page first) |
+| E or click | Touch / use the thing in front of you |
+| Q | The other choice, when a choice is offered |
+| 1 2 3 4 | Play the lute strings (in Hell) |
+| M | Mute the voice (subtitles stay on) |
+| Esc | Release the mouse |
 
-The full rules are in issues #1, #2, #3 and #4.
+## What there is to do
 
-## The game in one paragraph
+- **Eden:** turn the three stone rings until the red stones line up, and decide
+  whether to eat the dragon fruit.
+- **The Garden:** touch the glass sphere, peel the giant strawberry, and heed or
+  shoo the owl.
+- **Hell:** read the score and play its four notes on the lute, and keep or
+  snuff the tree-man's candle.
+- **The throne** at the far end closes the triptych. The epilogue reflects your
+  three choices. Then you can play again.
 
-The player starts on the meadow riding a Bosch-style mount. Giant berries and
-cherries are scattered around the garden. Ride into fruit to pick it up, then
-carry it to the central fountain to score. The player can also get off and
-walk, jump, and fly for a short time. A run ends when the player chooses to
-finish; the score is the number of fruit delivered.
+The otter follows a few steps ahead of you, sits down to type when you stop,
+and its laptop glows so you can find it in the dark.
 
-## Part 1: World and look
+## Other modes
 
-The garden itself and the painted style. This is the hardest part and gives the
-game its identity.
+Add these to the end of the localhost link:
 
-- [ ] Ground: rolling green meadow with a round lake in the middle and four
-      rivers running out of it.
-- [ ] Sky: pale blue fading to cream at the horizon, with distant blue hills.
-- [ ] Painted-look shader: flat, soft colours with fine dark outlines and a
-      faint cracked-oil-paint texture over the whole screen, so models look
-      like the painting and not like plastic.
-- [ ] Colour palette taken from the painting: pink, pale blue, grass green,
-      cream, with small red accents for fruit.
-- [ ] Lighting: soft and even, no hard shadows, like the painting.
-- [ ] Small ambient motion: water ripples, birds circling, fruit bobbing.
+| Link ending | What you get |
+| --- | --- |
+| `?fly` | Free camera over the world: drag to orbit, scroll to zoom |
+| `?legacy` | The earlier riding game: ride a mount, collect giant fruit, deliver it to the fountain |
+| `?legacy&fly` | Free camera over the riding game's world |
 
-**Done when:** a screenshot of the empty world could be mistaken for a corner
-of the painting.
+With `npm run dev` only, keys 7, 8 and 9 jump to each act and 0 starts the
+finale. These shortcuts are left out of the production build.
 
-## Part 2: Gameplay
+## Where things are
 
-Everything the player does. Build this first, using plain boxes and spheres,
-before any art exists.
+| Path | What it is |
+| --- | --- |
+| `src/main.js` | Renderer, camera, frame loop; picks the game from the link |
+| `src/game/speculum.js`, `speculum.css` | Speculum Mundi: menu, HUD, input, story flow |
+| `src/world/TriptychWorld.js` | The three-panel world, its puzzles and choices |
+| `src/core/` | Player controller, game state, puzzles, finale, shapes, the otter |
+| `src/narrative/` | The script, the spoken narration, the floating words |
+| `src/audio/` | Generated soundscapes |
+| `src/shaders/` | The oil-paint screen effect |
+| `src/shared/positions.js` | Map layout for both games |
+| `src/game/` (other files), `src/world/index.js`, `look.js`, `terrain.js`, `public/models/` | The riding game (`?legacy`): gameplay, meadow world, and `.glb` models |
 
-- [ ] Riding: W go, A/D steer, S brake.
-- [ ] Walking: F to get on and off the mount.
-- [ ] Jump with Space; tap Space three times to fly for a few seconds.
-- [ ] Camera that follows behind the player and stays above the ground.
-- [ ] Collisions: the player cannot pass through the fountain, towers, or
-      large models, and cannot ride into the lake except on the bridges.
-- [ ] Put the models on the map at the positions in `src/shared/positions.js`.
-- [ ] Fruit: spawn around the map, bob gently, pick up on touch, show how many
-      are carried.
-- [ ] Delivery: entering the fountain turns carried fruit into score.
-- [ ] Screens: start menu (Play), in-game counter, finish screen
-      (score, Play again).
-- [ ] Sound: pickup and delivery sounds, footsteps or hooves, wind while
-      flying, one looping music track, and a mute button.
-
-**Done when:** a full run works from Play to the finish screen with plain
-shapes and no art.
-
-## Part 3: Models with Meshy
-
-The objects that fill the world. Each one is generated in Meshy, exported as
-`.glb`, and saved in `public/models/`.
-
-- [ ] Central pink fountain (the delivery target).
-- [ ] Four corner towers: pink and blue, part rock and part plant.
-- [ ] Giant fruit: strawberry, cherry, blackberry (the things you collect).
-- [ ] The mount: a Bosch-style creature to ride.
-- [ ] The player figure.
-- [ ] Bridge across the lake.
-- [ ] Scenery: giant bird, glass sphere, shell, odd tree.
-
-Rules for every model:
-
-- Generate from a cropped piece of the painting or a short text prompt in
-  the painting's style.
-- Keep each model small (aim under 20,000 triangles, and under 5 MB) so the
-  page loads fast.
-- Ignore Meshy's own textures where they clash; the Part 1 shader recolours
-  models to match the palette.
-- Name files plainly: `fountain.glb`, `tower_pink.glb`, `strawberry.glb`.
-
-**Done when:** every item in the list has a `.glb` that loads in the game at
-the right size and facing the right way.
-
-## Build order
-
-1. Setup (#4): one person creates the project and the shared files. Small, and
-   it must be merged before Parts 1 and 2 start.
-2. Parts 1, 2 and 3 (#1, #2, #3) at the same time, each on its own branch.
-3. Merge all three and polish.
+All art is built in code or shipped as small `.glb` files. All sound is
+generated in the browser. There are no image or audio files.
 
 ## Later (not now)
 
 - Putting it online.
-- Leaderboard, chat, other players.
 - Touch controls for phones.

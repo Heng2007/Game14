@@ -151,7 +151,7 @@ export class TriptychWorld {
     const score=this.place(scorePlaque(),TRIPTYCH.score);
     this.score=score;
     this.treeMan=this.place(treeMan(),TRIPTYCH.treeMan,4.5);
-    this.place(birdThrone(),TRIPTYCH.throne,2.5);
+    this.throne=this.place(birdThrone(),TRIPTYCH.throne,2.5);
     for(const [x,z,color] of [[62,12,'#b77347'],[80,-8,'#c07c49'],[95,8,'#8ba8b9']]) {
       const light=new THREE.PointLight(color,100,30,2);light.position.set(x,triptychHeight(x,z)+7,z);this.scene.add(light);
     }
@@ -234,6 +234,8 @@ export class TriptychWorld {
       {object:this.treeMan,radius:8,prompt:()=>state.decisions.candleAction===null?'E · keep the candle / Q · snuff the candle':'The candle choice is recorded.',onPrimary:()=>choose('candleAction','kept','You keep a little light for someone who has not arrived.'),onSecondary:()=>{
         const text=choose('candleAction','snuffed','You let the candle go. Darkness is also a kind of shelter.');this.treeMan.userData.setCandle(state.decisions.candleAction!=='snuffed');return text;
       }},
+      // The throne ends the story when you reach it; this only tells the player where to go.
+      {object:this.throne,radius:14,prompt:()=> 'Walk up to the throne to close the triptych',onPrimary:()=> 'The throne waits at the end of every road.'},
     );
     this.resetGameplay();
   }

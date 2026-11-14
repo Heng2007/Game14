@@ -44,9 +44,10 @@ async function start() {
     controls.maxPolarAngle = Math.PI / 2 - 0.02;
   }
 
-  const clock = new THREE.Clock();
+  const timer = new THREE.Timer();
   renderer.setAnimationLoop(() => {
-    const dt = Math.min(clock.getDelta(), 0.1); // seconds since last frame
+    timer.update();
+    const dt = Math.min(timer.getDelta(), 0.1); // seconds since last frame
     if (fly) controls.update();
     else game.update(dt);
     world.update(dt);
