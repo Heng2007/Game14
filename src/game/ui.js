@@ -5,6 +5,8 @@ import './style.css';
 const el = (tag, cls, html = '') => {
   const e = document.createElement(tag);
   e.className = cls; e.innerHTML = html;
+  // A focused button would be clicked again by Space (our jump key), so drop focus after a click.
+  if (tag === 'button') e.addEventListener('click', () => e.blur());
   return e;
 };
 
