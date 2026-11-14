@@ -97,7 +97,7 @@ export class BoschOilPass {
     const override = scene.overrideMaterial;
     const transparent = [];
     scene.traverse(object => {
-      if (object.visible && object.isMesh && object.material.transparent) {
+      if (object.visible && (object.isMesh || object.isPoints) && (object.material.transparent || object.userData.noOutline)) {
         transparent.push(object); object.visible = false;
       }
     });

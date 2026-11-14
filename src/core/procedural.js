@@ -40,26 +40,6 @@ export function bubble(radius = 2) {
     color: PALETTES.garden.bubble, transparent: true, opacity: 0.24, side: THREE.DoubleSide,
   }));
 }
-export function paintedBackdrop(layer = 0) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024; canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, 0, 512);
-  gradient.addColorStop(0, '#a3bcb7'); gradient.addColorStop(1, '#668774');
-  ctx.fillStyle = gradient;
-  ctx.beginPath(); ctx.moveTo(0, 512);
-  for (let x = 0; x <= 1024; x += 4) ctx.lineTo(x, 230 + Math.sin(x * 0.012 + layer) * 65 + Math.sin(x * 0.027) * 24);
-  ctx.lineTo(1024, 512); ctx.fill();
-  for (let i = 0; i < 2600; i++) {
-    const x = (i * 137.51) % 1024, y = 315 + (i * 41.3) % 197;
-    ctx.fillStyle = i % 2 ? '#eee1bc18' : '#283f3e12';
-    ctx.fillRect(x, y, 14, 2);
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.Mesh(new THREE.PlaneGeometry(130, 32), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
-}
-
 const paints = new Map();
 export function paint(color) {
   if (!paints.has(color)) paints.set(color, new THREE.MeshLambertMaterial({ color }));

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PATH, pathHeight } from '../shared/positions.js';
 import { corridorDistance, projectCorridor } from '../core/Corridor.js';
 import { FenceChunks } from './FenceChunks.js';
+import { installWind } from './AmbientGeometry.js';
 
 export class FencesAndBounds {
   constructor(scene) {
@@ -84,6 +85,9 @@ export class FencesAndBounds {
       for(let i=0;i<colors.length;i+=3){colors[i]=ink.r;colors[i+1]=ink.g;colors[i+2]=ink.b;}
       copy.setAttribute('color',new THREE.BufferAttribute(colors,3));
       copy.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(copy.attributes.position.count*2).fill(0.5),2));
+      const vertices=copy.attributes.position,weights=[];
+      for(let i=0;i<vertices.count;i++)weights.push(THREE.MathUtils.clamp(vertices.getY(i)-pathHeight(vertices.getX(i),vertices.getZ(i)),0,1));
+      copy.setAttribute('windWeight',new THREE.Float32BufferAttribute(weights,1));
       return copy;
     };
     for(const [key,{geometry,items}] of batches){
@@ -129,7 +133,9 @@ export class FencesAndBounds {
       for(let i=0;i<vertices.count;i++){const x=81+vertices.getX(i),z=(from+to)/2+vertices.getZ(i);vertices.setXYZ(i,x,pathHeight(x,z)+0.03,z);}
       geometry.computeVertexNormals();this.chunks.add(prepare(geometry,'#87745c',matrix.identity()),'hell',81);geometry.dispose();
     }
-    this.chunks.build(new THREE.MeshLambertMaterial({map:texture,vertexColors:true,flatShading:true}));
+    const material=new THREE.MeshLambertMaterial({map:texture,vertexColors:true,flatShading:true});
+    this.windTime={value:0};installWind(material,this.windTime,'windWeight','attribute float windWeight;');
+    this.chunks.build(material);
     for(const geometry of [cube,rock,thorn,weave,vine])geometry.dispose();
     this.lanternMatrix=new THREE.Matrix4();
   }
@@ -137,6 +143,7 @@ export class FencesAndBounds {
   project(position,margin=0.45){return projectCorridor(position,this.segments,margin);}
   update(dt,position){
     this.time+=dt;this.glowMaterial.uniforms.time.value=this.time;this.orbMaterial.emissiveIntensity=1.1+Math.sin(this.time*1.7)*0.2;
+    this.windTime.value=this.time;
     if(!Number.isFinite(position?.x)||!Number.isFinite(position?.z))return;
     this.chunks.update(position);
     let count=0;

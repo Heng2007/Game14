@@ -2,12 +2,15 @@ import * as THREE from 'three';
 import { PATH, TRIPTYCH, triptychHeight } from '../shared/positions.js';
 import { corridorDistance } from '../core/Corridor.js';
 import {
-  fountain, bubble, paintedBackdrop, stoneRings, dragonTree, organicSpire, owl,
+  fountain, bubble, stoneRings, dragonTree, organicSpire, owl,
   peelableStrawberry, instruments, scorePlaque, treeMan, birdThrone, paint, box, orb,
 } from '../core/procedural.js';
 import { BoschOilPass } from '../shaders/BoschOilShader.js';
 import { PuzzleProgress, RING_START, LUTE_NOTES } from '../core/PuzzleProgress.js';
 import { FencesAndBounds } from './FencesAndBounds.js';
+import { AmbientProps } from './AmbientProps.js';
+import { Horizon, createZoneFog, updateZoneFog, installHeightFog } from './Horizon.js';
+import { installWind } from './AmbientGeometry.js';
 
 const smooth = (a,b,x) => THREE.MathUtils.smoothstep(x,a,b);
 const colours = ['#bfcdb1','#d4dfe0','#11151c'].map(c => new THREE.Color(c));
@@ -17,12 +20,16 @@ export class TriptychWorld {
   constructor({ renderer, scene, camera }) {
     Object.assign(this, { renderer, scene, camera });
     this.interactables = []; this.obstacles = []; this.animations = []; this.time = 0;
-    scene.background = colours[0].clone(); scene.fog = new THREE.Fog(colours[0],40,150);
+    this.treeWind={value:0};
+    scene.background = colours[0].clone(); scene.fog = createZoneFog();
     this.hemisphere = new THREE.HemisphereLight('#fff1c6','#5b714f',2.6);
     this.sun = new THREE.DirectionalLight('#f9dfab',1.4); this.sun.position.set(-70,50,25);
     scene.add(this.hemisphere,this.sun);
     this.buildTerrain(); this.buildEden(); this.buildGarden(); this.buildHell(); this.buildShutters();
     this.fences = new FencesAndBounds(scene);
+    this.ambient = new AmbientProps(scene,{perches:this.fences.boxes});
+    this.horizon = new Horizon(scene);
+    installHeightFog(scene);
     this.oil = new BoschOilPass(renderer,scene,camera);
     scene.userData.triptych = this;
   }
@@ -49,10 +56,6 @@ export class TriptychWorld {
     }
     geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3)); geometry.computeVertexNormals();
     this.scene.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({vertexColors:true})));
-    for (let i = 0; i < 3; i++) {
-      const hills = paintedBackdrop(i); hills.scale.set(0.85,1.5,1);
-      hills.position.set(-65+i*15,13,-43-i*7); this.scene.add(hills);
-    }
     const tuftGeometry = new THREE.ConeGeometry(0.13,0.65,3);
     const tufts = new THREE.InstancedMesh(tuftGeometry,paint('#6d8b59'),650);
     const matrix = new THREE.Object3D();
@@ -84,7 +87,9 @@ export class TriptychWorld {
     const dragon=this.place(dragonTree(),TRIPTYCH.dragonTree,2);
     this.dragonFruit=orb(dragon,'#c7484f',[0,2.3,1.8],[0.6,0.8,0.6]);
     for (const p of [{x:-91,z:-19},{x:-52,z:-28},{x:-85,z:13}]) {
-      const tree = dragonTree(); tree.scale.setScalar(0.55); this.place(tree,p,1.5);
+      const tree = dragonTree(); tree.scale.setScalar(0.55);
+      tree.traverse(object=>{if(object.material)installWind(object.material,this.treeWind);});
+      this.place(tree,p,1.5);
     }
   }
   buildGarden() {
@@ -112,35 +117,6 @@ export class TriptychWorld {
     const bird = this.owl = owl(); bird.scale.setScalar(0.65); this.place(bird,TRIPTYCH.owl); bird.position.y=3.1;
     this.owlFlight=0;
     this.animations.push(dt=>{if(this.owlShooed){this.owlFlight=Math.min(30,this.owlFlight+dt*3);bird.position.y=3.1+this.owlFlight;bird.position.z=TRIPTYCH.owl.z-this.owlFlight;bird.visible=this.owlFlight<30;}});
-    this.buildMounts();
-    for (let i=0;i<7;i++) {
-      const sphere=bubble(0.5+i*0.14); this.place(sphere,{x:-10+i*3,z:-25}); sphere.position.y=3+i%3;
-    }
-  }
-  buildMounts() {
-    const count=14, dummy=new THREE.Object3D();
-    const geometry=new THREE.SphereGeometry(1,12,8);
-    const pieces = [
-      {c:'#bca58b',p:[0,1.2,0],s:[0.65,0.7,1.2]},
-      {c:'#c9b994',p:[0,2.1,0.9],s:[0.45,0.8,0.4]},
-      {c:'#d8c8ac',p:[0,2.8,1.1],s:[0.5,0.4,0.7]},
-      ...[-1,1].flatMap(s => [-1,1].map(t=>({c:'#786f57',p:[s*0.4,0.4,t*0.65],s:[0.13,0.6,0.13]}))),
-      {c:'#96aab2',p:[0,2.2,-0.4],s:[0.3,0.75,0.3]},
-    ];
-    const meshes=pieces.map(part=>{const mesh=new THREE.InstancedMesh(geometry,paint(part.c),count);this.scene.add(mesh);return mesh;});
-    this.animations.push(() => {
-      for(let i=0;i<count;i++) {
-        const a=i*Math.PI*2/count+this.time*0.075, r=19;
-        const root=new THREE.Matrix4().makeRotationY(-a);
-        root.setPosition(Math.cos(a)*r,0,Math.sin(a)*r);
-        pieces.forEach((part,j)=>{
-          dummy.position.set(...part.p); dummy.position.y+=Math.sin(this.time*4+i)*0.08;
-          dummy.scale.set(...part.s); dummy.updateMatrix();
-          meshes[j].setMatrixAt(i,new THREE.Matrix4().multiplyMatrices(root,dummy.matrix));
-        });
-      }
-      meshes.forEach(mesh=>{mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();});
-    });
   }
   buildHell() {
     const ice=new THREE.Mesh(new THREE.CircleGeometry(10,48).rotateX(-Math.PI/2),paint('#72878c'));
@@ -158,18 +134,6 @@ export class TriptychWorld {
     this.throne=this.place(birdThrone(),TRIPTYCH.throne,2.5);
     for(const [x,z,color] of [[62,12,'#b77347'],[80,-8,'#c07c49'],[95,8,'#8ba8b9']]) {
       const light=new THREE.PointLight(color,100,30,2);light.position.set(x,triptychHeight(x,z)+7,z);this.scene.add(light);
-    }
-    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
-    const c=canvas.getContext('2d');
-    const glow=c.createRadialGradient(256,220,2,256,180,230);glow.addColorStop(0,'#e9a35b');glow.addColorStop(0.3,'#a43d25');glow.addColorStop(1,'#521e1400');
-    c.fillStyle=glow;c.fillRect(0,0,512,256);
-    c.fillStyle='#14191b';
-    for(let i=0;i<24;i++){const h=15+(i*23)%85;c.fillRect(i*22,256-h,18,h);c.beginPath();c.moveTo(i*22,256-h);c.lineTo(i*22+9,235-h);c.lineTo(i*22+18,256-h);c.fill();}
-    const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-    for(let i=0;i<6;i++) {
-      const mat=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide,color:'#ffb47a'});
-      const fire=new THREE.Mesh(new THREE.PlaneGeometry(24,16),mat);fire.position.set(40+i*15,0,-43-i%2*4);this.scene.add(fire);
-      this.animations.push(()=>{mat.opacity=0.8+Math.sin(this.time*3+i)*0.08+Math.sin(this.time*7+i)*0.04;});
     }
   }
   buildShutters() {
@@ -260,6 +224,7 @@ export class TriptychWorld {
   }
   update(dt) {
     this.time+=dt;
+    this.treeWind.value=this.time;
     this.fences.update(dt,this.camera.position);
     if(this.opening && this.opening.elapsed<3) {
       const o=this.opening;o.elapsed=Math.min(3,o.elapsed+dt);
@@ -272,7 +237,8 @@ export class TriptychWorld {
     this.animations.forEach(update=>update(dt));
     const x=this.camera.position.x, garden=smooth(-40,-30,x), hell=smooth(30,40,x);
     this.scene.background.copy(colours[0]).lerp(colours[1],garden).lerp(colours[2],hell);
-    this.scene.fog.color.copy(this.scene.background);this.scene.fog.near=THREE.MathUtils.lerp(42,24,hell);this.scene.fog.far=THREE.MathUtils.lerp(155,95,hell);
+    updateZoneFog(this.scene.fog,x);
+    this.ambient.update(dt,this.camera.position);this.horizon.update(dt,this.camera.position);
     this.hemisphere.color.set('#fff1c6').lerp(new THREE.Color('#f4eced'),garden).lerp(new THREE.Color('#596475'),hell);
     this.hemisphere.groundColor.set('#64734c').lerp(new THREE.Color('#b0a397'),garden).lerp(new THREE.Color('#14151b'),hell);
     this.hemisphere.intensity=THREE.MathUtils.lerp(2.6+garden*0.5,0.34,hell);
