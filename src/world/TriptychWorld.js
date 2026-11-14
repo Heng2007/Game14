@@ -260,7 +260,7 @@ export class TriptychWorld {
   }
   update(dt) {
     this.time+=dt;
-    this.fences.update(dt);
+    this.fences.update(dt,this.camera.position);
     if(this.opening && this.opening.elapsed<3) {
       const o=this.opening;o.elapsed=Math.min(3,o.elapsed+dt);
       const swing=smooth(0,1.5,o.elapsed);

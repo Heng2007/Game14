@@ -176,7 +176,6 @@ function buildSky(scene) {
     `,
   });
   const sky = new THREE.Mesh(geo, mat);
-  sky.frustumCulled = false;
   sky.renderOrder = -1;
   scene.add(sky);
 }
