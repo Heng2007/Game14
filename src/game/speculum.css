@@ -42,4 +42,5 @@
 .sm-finale p { font-size: 18px; line-height: 1.7; }
 .sm-again { padding: 16px 22px; border: 1px solid #b7a174; background: #283f3e; color: #eee1bc; font: 16px Georgia, serif; cursor: pointer; }
 .sm-again:hover { background: #456052; }
+.sm-audio { position: absolute; top: 68px; right: 30px; padding: 9px 13px; border: 1px solid #b7a17488; border-radius: 3px; font: 12px Georgia, serif; color: #fff2d4; background: #182625dd; box-shadow: 0 0 calc(var(--audio-level, 0) * 24px) #e8d898; transform: scale(calc(1 + var(--audio-level, 0) * .06)); }
 @media (max-width: 640px) { .sm-hud { top: 20px; left: 20px; }.sm-controls { font-size: 8px; padding: 0 15px; box-sizing: border-box; line-height: 1.8; }.sm-caption { font-size: 17px; } }

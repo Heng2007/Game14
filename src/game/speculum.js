@@ -12,7 +12,7 @@ import './speculum.css';
 export const state = new GameState();
 export let controller;
 let world, hud, caption, entered = false;
-let diegetic;
+let diegetic, audioIndicator;
 let finale, startFinale, otter;
 const OTTER_START = { x: TRIPTYCH.spawn.x + 4, z: TRIPTYCH.spawn.z + 1.5 };
 const THRONE_REACH = 6;
@@ -43,6 +43,7 @@ export function init({ camera, renderer, scene, ui }) {
     <div class="sm-crosshair">+</div>
     <div class="sm-caption" aria-live="polite" aria-atomic="true"></div>
     <div class="sm-status" role="status"></div>
+    <div class="sm-audio" role="status">Audio: ON [M to Mute]</div>
     <div class="sm-prompt" role="status"></div>
     <div class="sm-controls">W A S D · WALK &nbsp; / &nbsp; MOUSE · LOOK &nbsp; / &nbsp; E / CLICK · TOUCH &nbsp; / &nbsp; Q · CHOOSE &nbsp; / &nbsp; M · MUTE</div>
     <button class="sm-resume" hidden>Return to the triptych</button>
@@ -54,6 +55,7 @@ export function init({ camera, renderer, scene, ui }) {
   ui.classList.add('sm-at-shutters');
   hud=ui.querySelector('.sm-hud');caption=ui.querySelector('.sm-caption');
   const statusEl=ui.querySelector('.sm-status');
+  audioIndicator=ui.querySelector('.sm-audio');
   let statusTimer;
   const status={set textContent(text){
     statusEl.textContent=text;clearTimeout(statusTimer);
@@ -66,6 +68,10 @@ export function init({ camera, renderer, scene, ui }) {
   otter.reset(OTTER_START.x,OTTER_START.z);
   audio.narrator.addEventListener('line-start',()=>{sound.ducked=true;});
   audio.narrator.addEventListener('line-end',()=>{sound.ducked=false;});
+  audio.narrator.addEventListener('word',event=>{
+    const line=audio.narrator.current;
+    sound.murmur(line.words[event.detail.index].text,Boolean(audio.narrator.voice&&!line.speechFailed));
+  });
   finale=new FinaleSequence({camera,controller,world,state,onComplete:text=>{
     hud.querySelector('h2').textContent=titles.FINALE[0];hud.querySelector('p').textContent=titles.FINALE[1];
     ending.querySelector('p').textContent=text;ending.hidden=false;resume.hidden=true;
@@ -128,6 +134,12 @@ export function init({ camera, renderer, scene, ui }) {
 }
 export function update(dt) {
   audio.narrator.update();diegetic?.update(dt);
+  if(audioIndicator){
+    const level=audio.getOutputLevel();
+    audioIndicator.textContent=audio.narrator.muted?'Audio: OFF [M to Unmute]':'Audio: ON [M to Mute]';
+    audioIndicator.style.setProperty('--audio-level',Math.min(1,level*25));
+    audioIndicator.dataset.level=level.toFixed(5);
+  }
   // The otter follows while you walk; it waits at the gate and watches the finale.
   otter?.update(dt,entered&&!finale.active?controller.camera:null);
   if(!entered)return;

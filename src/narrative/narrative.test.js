@@ -23,7 +23,7 @@ test('voice preference respects English names, regional fallback, default and em
     { name: 'British', lang: 'en-GB' }, { name: 'Daniel', lang: 'en-GB' },
     { name: 'Google UK English Male', lang: 'en-GB' },
   ];
-  for (let i = 4; i >= 0; i--) assert.equal(pickEnglishVoice(voices.slice(0, i + 1)), voices[i]);
+  for (let i = 4; i >= 0; i--) assert.equal(pickEnglishVoice(voices.slice(0, i + 1)), voices[i >= 3 ? i : 0]);
   assert.equal(pickEnglishVoice([]), null);
   const { narrator, synth } = setup();
   synth.voices = voices; synth.dispatchEvent(new Event('voiceschanged'));
@@ -79,6 +79,30 @@ test('unlock primes once; spatial triggers fire once and only inside their radiu
   for (const line of SCRIPT) for (let i = 0; i < 2; i++) triggers.update(line, value => seen.push(value.id));
   assert.equal(seen.length, SCRIPT.length); assert.equal(triggers.history.length, SCRIPT.length);
   new NarrativeTriggers([]).update({ x: 0, z: 0 }, () => assert.fail());
+});
+
+test('standing in a narrative volume for hundreds of frames cancels only once', () => {
+  const { narrator, synth, tick } = setup(), triggers = new NarrativeTriggers([SCRIPT[0]]);
+  for(let frame=0;frame<600;frame++) {
+    triggers.update(SCRIPT[0],line=>narrator.speak(line.text,line));tick(1/60);
+  }
+  assert.equal(synth.cancels,1);assert.equal(synth.spoken.length,1);assert.equal(triggers.fired.size,1);
+  assert.equal(triggers.lines[0].triggered,true);triggers.reset();assert.equal(triggers.lines[0].triggered,false);
+  assert.equal(narrator.current.ended,true);
+});
+test('asynchronous voices refresh the selection; default speech and strong utterance reference work', () => {
+  const previous=globalThis.window;globalThis.window={};
+  try {
+    const { narrator,synth }=setup();synth.voices=[];synth.dispatchEvent(new Event('voiceschanged'));
+    narrator.speak('Default system voice.');assert.equal(synth.spoken[0].voice,undefined);
+    assert.equal(window.__activeUtterance,synth.spoken[0]);
+    synth.voices=[{name:'System default',lang:'en-US',default:true}];synth.dispatchEvent(new Event('voiceschanged'));
+    narrator.speak('A loaded voice.');assert.equal(synth.spoken[1].voice.name,'System default');
+    assert.equal(window.__activeUtterance,synth.spoken[1]);
+    synth.voices.push({name:'Daniel',lang:'en-GB'});synth.dispatchEvent(new Event('voiceschanged'));
+    narrator.speak('Daniel arrives.');assert.equal(synth.spoken[2].voice.name,'Daniel');
+    narrator.reset();assert.equal(window.__activeUtterance,null);
+  } finally { globalThis.window=previous; }
 });
 
 function fakeDocument() {

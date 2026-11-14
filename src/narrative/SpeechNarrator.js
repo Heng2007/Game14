@@ -1,9 +1,7 @@
 export function pickEnglishVoice(voices) {
   const english = voices.filter(voice => /^en(?:[-_]|$)/i.test(voice.lang));
   return ['Google UK English Male', 'Daniel'].map(name => english.find(voice => voice.name === name)).find(Boolean)
-    ?? english.find(voice => /^en[-_]GB$/i.test(voice.lang))
-    ?? english.find(voice => voice.default) ?? english[0]
-    ?? voices.find(voice => voice.default) ?? null;
+    ?? voices.find(voice => voice.default) ?? english[0] ?? null;
 }
 
 export function splitWords(text) {
@@ -25,6 +23,7 @@ export class SpeechNarrator extends EventTarget {
     if (this.primed || !this.synth || !this.Utterance || this.muted) return;
     this.primed = true;
     const prime = new this.Utterance(' '); prime.volume = 0;
+    if (globalThis.window) window.__activeUtterance = prime;
     this.synth.speak(prime);
   }
   speak(text, { zone = 'ACT_I_EDEN', id = null } = {}) {
@@ -39,8 +38,9 @@ export class SpeechNarrator extends EventTarget {
     this.emit('line-start', line);
     this.advance(0);
     if (this.muted || !this.synth || !this.Utterance) return line;
-    this.refreshVoices();
     const utterance = new this.Utterance(text);
+    this.utterance = utterance;
+    if (globalThis.window) window.__activeUtterance = utterance;
     Object.assign(utterance, { rate: 0.88, pitch: 0.90, volume: 1.0, lang: 'en-GB' });
     if (this.voice) utterance.voice = this.voice;
     const active = () => generation === this.generation && this.current === line && !line.ended;
@@ -51,7 +51,7 @@ export class SpeechNarrator extends EventTarget {
       this.advance(index);
     };
     utterance.onend = () => { if (active()) { this.advance(words.length - 1); this.end('complete'); } };
-    utterance.onerror = () => { if (active()) line.source = 'estimate'; };
+    utterance.onerror = () => { if (active()) { line.source = 'estimate'; line.speechFailed = true; } };
     this.synth.speak(utterance);
     return line;
   }
@@ -94,5 +94,7 @@ export class SpeechNarrator extends EventTarget {
     this.synth?.cancel();
     this.end('reset');
     this.current = null;
+    this.utterance = null;
+    if (globalThis.window) window.__activeUtterance = null;
   }
 }

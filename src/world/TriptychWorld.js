@@ -237,6 +237,14 @@ export class TriptychWorld {
       // The throne ends the story when you reach it; this only tells the player where to go.
       {object:this.throne,radius:14,prompt:()=> 'Walk up to the throne to close the triptych',onPrimary:()=> 'The throne waits at the end of every road.'},
     );
+    const kinds=new Map([[this.glass,'bubble'],[this.fruit,'fruit'],[this.lute,'lute']]);
+    for(const item of this.interactables){
+      for(const action of ['onPrimary','onSecondary']){
+        if(!item[action])continue;
+        const interact=item[action];
+        item[action]=()=>{sound.interaction(this.ringHandles.includes(item.object)?'ring':kinds.get(item.object));return interact();};
+      }
+    }
     this.resetGameplay();
   }
   resetGameplay() {

@@ -12,11 +12,12 @@ export const SCRIPT = [
 ];
 
 export class NarrativeTriggers {
-  constructor(lines = SCRIPT) { this.lines = lines; this.fired = new Set(); this.history = []; }
-  reset() { this.fired.clear(); this.history.length = 0; }
+  constructor(lines = SCRIPT) { this.lines = lines.map(line => ({ ...line, triggered: false })); this.fired = new Set(); this.history = []; }
+  reset() { this.fired.clear(); this.history.length = 0; this.lines.forEach(line => { line.triggered = false; }); }
   update(position, onTrigger) {
     for (const line of this.lines) {
-      if (this.fired.has(line.id) || Math.hypot(position.x - line.x, position.z - line.z) > line.radius) continue;
+      if (line.triggered || this.fired.has(line.id) || Math.hypot(position.x - line.x, position.z - line.z) > line.radius) continue;
+      line.triggered = true;
       this.fired.add(line.id);
       this.history.push({ id: line.id, x: position.x, zone: line.zone });
       onTrigger(line);

@@ -24,3 +24,14 @@ test('locked sound is inert; shared-context beds duck, shots dispose, stop is id
   assert.equal(manager.shots.size,0);manager.bell();manager.stop();manager.stop();assert.ok(nodes.every(n=>n.disconnected));
   assert.equal(manager.diagnostics.nodes,0);manager.start(context,{});assert.equal(manager.diagnostics.contextState,'running');manager.stop();
 });
+test('arpeggios schedule polyphony without a render loop, shift scales, and all SFX and murmurs clean up', () => {
+  const manager=new SoundManager(),{context,nodes}=audioMock();manager.start(context,{});
+  assert.equal(manager.musicShots.size,2);assert.ok(manager.beds[0].gain.value>0);
+  for(const x of [-92,0,60]){manager.update(x);context.currentTime+=1;manager.schedule();}
+  assert.ok(manager.musicShots.size>=8);
+  for(const kind of ['ring','bubble','fruit','lute',undefined])manager.interaction(kind);
+  manager.murmur('innocence');manager.murmur('the',true);assert.ok(manager.shots.size>5);
+  for(const shot of [...manager.shots,...manager.musicShots])shot.sources.forEach(source=>source.onended());
+  assert.equal(manager.shots.size,0);assert.equal(manager.musicShots.size,0);manager.stop();assert.ok(nodes.every(node=>node.disconnected));
+  manager.murmur('');manager.interaction('ring');manager.schedule();assert.equal(manager.shots.size,0);
+});
