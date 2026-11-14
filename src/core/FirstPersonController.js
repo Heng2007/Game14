@@ -1,10 +1,11 @@
 import { Vector3 } from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { pushFromBoxes } from './Corridor.js';
 
 export class FirstPersonController extends EventTarget {
-  constructor(camera, element, { getHeight, bounds, obstacles = [], eyeHeight = 1.7, blocked = () => false }) {
+  constructor(camera, element, { getHeight, bounds, obstacles = [], eyeHeight = 1.7, blocked = () => false, corridor }) {
     super();
-    Object.assign(this, { camera, getHeight, bounds, obstacles, eyeHeight, blocked });
+    Object.assign(this, { camera, getHeight, bounds, obstacles, eyeHeight, blocked, corridor });
     this.controls = new PointerLockControls(camera, element);
     this.keys = new Set();
     this.velocity = new Vector3();
@@ -52,12 +53,18 @@ export class FirstPersonController extends EventTarget {
           position.z = obstacle.z + (distance ? dz / distance : 0) * radius;
         }
       }
+      this.corridor?.project(position, margin);
+      pushFromBoxes(position, this.corridor?.boxes, margin);
     }
     position.y = this.getHeight(position.x, position.z) + this.eyeHeight;
   }
   update(dt) {
     if (this.enabled === false || !this.controls.isLocked) return;
-    dt = Math.min(dt, 0.05);
+    dt = Math.min(dt, 0.25);
+    const steps = Math.max(1, Math.ceil(dt / 0.025));
+    for (let step = 0; step < steps; step++) this.moveStep(dt / steps);
+  }
+  moveStep(dt) {
     const direction = new Vector3(Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA')), 0,
       Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS'))).normalize().multiplyScalar(4);
     this.velocity.lerp(direction, 1 - Math.exp(-9 * dt));
@@ -65,12 +72,16 @@ export class FirstPersonController extends EventTarget {
     this.controls.moveRight(this.velocity.x * dt);
     this.controls.moveForward(this.velocity.z * dt);
     this.constrain(this.camera.position);
-    if (this.blocked?.(this.camera.position.x, this.camera.position.z)) {
+    const invalid = position => this.blocked?.(position.x, position.z) ||
+      (this.corridor && !this.corridor.contains(position.x, position.z, 0.45));
+    if (invalid(this.camera.position)) {
       const next = this.camera.position.clone();
       this.camera.position.set(next.x, next.y, previous.z);
-      if (this.blocked(this.camera.position.x, this.camera.position.z)) {
+      this.constrain(this.camera.position);
+      if (invalid(this.camera.position)) {
         this.camera.position.set(previous.x, next.y, next.z);
-        if (this.blocked(this.camera.position.x, this.camera.position.z)) this.camera.position.copy(previous);
+        this.constrain(this.camera.position);
+        if (invalid(this.camera.position)) this.camera.position.copy(previous);
       }
       this.camera.position.y = this.getHeight(this.camera.position.x, this.camera.position.z) + this.eyeHeight;
     }

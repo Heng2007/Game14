@@ -100,6 +100,35 @@ export function triptychBlocked(x, z) {
   return triptychWater(x, z) && !onTriptychBridge(x, z, 0.4);
 }
 
+const route = (act, points, kind = 'trail') => points.slice(1).map((point, i) => ({
+  act, kind, a: { x: points[i][0], z: points[i][1] }, b: { x: point[0], z: point[1] }, halfWidth: point[2],
+}));
+export const PATH = [
+  ...route('eden', [[-100,26],[-92,26,4],[-84,18,4],[-80,10,4],[-79,0,4],[-76,-10,3.5],[-68,-10,3.5],[-64,-2,3.5],[-60,9,5.6],[-50,9,3.5],[-43,2,3],[-38,-5,4],[-34,-5,1.95]]),
+  ...route('garden', [[-34,-5],[-24,-9,3],[-22,-18,3.5],[-16,-16,3],[-12.7,-12.7,2]]),
+  ...route('garden', [[-22,-18],[-22,-18,6]]),
+  ...route('garden', [[-12.7,-12.7],[-2.7,-2.7,1.35]], 'bridge'),
+  ...route('garden', [[0,0],[0,0,4.25]]),
+  ...route('garden', [[-2.7,2.7],[-12.7,12.7,1.35]], 'bridge'),
+  ...route('garden', [[-12.7,12.7],[-18,10,3],[-21,4,4],[-24,-9,3]]),
+  ...route('garden', [[2.7,2.7],[12.7,12.7,1.35]], 'bridge'),
+  ...route('garden', [[12.7,12.7],[18,10,3],[23,3,3],[27,-1,3.5],[27,-5,4],[34,-4,3]]),
+  ...route('garden', [[23,-5],[23,-5,6]]),
+  ...route('hell', [[34,-4],[43,-1,3],[52,4,3.5],[63,5,5.5],[59,-4,3]]),
+  ...route('hell', [[63,5],[64,13,3.5]]),
+  ...route('hell', [[59,-4],[59,-22,1.4]], 'ice'),
+  ...route('hell', [[59,-22],[68,-26,3],[75,-29,3],[81,-28,2],[81,-20.8,1.8],[81,-17,1.8],[81,-13.2,1.8],[81,-6,1.8],[89,-4,3],[95,2,5]]),
+  ...route('hell', [[81,-17],[81,-17,3.55]]),
+];
+export const PATH_SPAWNS = { Digit7: TRIPTYCH.spawn, Digit8: { x: -24, z: -9 }, Digit9: { x: 43, z: -1 } };
+export const PATH_LANDMARKS = ['spawn','rings','dragonTree','owl','sphere','strawberry','lute','treeMan','throne'];
+
+export function pathHeight(x, z) {
+  const base = triptychHeight(x, z);
+  if (Math.abs(x - 81) > 3.65 || z < -28 || z > -6) return base;
+  return base + 5.1 * Math.max(0, Math.min(1, (z + 28) / 7.2, (-6 - z) / 7.2));
+}
+
 export const SCENERY = [
   { name: 'tree', x: 60, z: 90, rotY: 0 },
   { name: 'tree', x: -85, z: 60, rotY: 1 },

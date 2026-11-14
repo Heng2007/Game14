@@ -206,8 +206,11 @@ export function scorePlaque() {
 }
 export function treeMan() {
   const group = new THREE.Group();
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(4.5,32,24,0.55,Math.PI*2-1.1,0.3,2.5), new THREE.MeshLambertMaterial({color:'#c8c1aa',side:THREE.DoubleSide}));
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(4.5,32,24,0.55,Math.PI-1.1,0.3,2.5), new THREE.MeshLambertMaterial({color:'#c8c1aa',side:THREE.DoubleSide}));
   shell.position.y = 8; shell.scale.set(1,1.2,1); shell.rotation.y = Math.PI/2; group.add(shell);
+  const back=shell.clone();back.rotation.y+=Math.PI;group.add(back);
+  const floor=new THREE.Mesh(new THREE.CylinderGeometry(3.7,3.7,0.2,24),paint('#87745c'));
+  floor.position.y=5;group.add(floor);
   for (const side of [-1,1]) {
     tube(group, [[side*2,0,0],[side*2.8,3,0],[side*2,6,0]],0.6,'#857e67');
     tube(group, [[side*3,9,0],[side*6,11,0],[side*7,14,1]],0.25,'#857e67');

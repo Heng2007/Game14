@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { TRIPTYCH, triptychHeight } from '../shared/positions.js';
+import { PATH, TRIPTYCH, triptychHeight } from '../shared/positions.js';
+import { corridorDistance } from '../core/Corridor.js';
 import {
   fountain, bubble, paintedBackdrop, stoneRings, dragonTree, organicSpire, owl,
   peelableStrawberry, instruments, scorePlaque, treeMan, birdThrone, paint, box, orb,
 } from '../core/procedural.js';
 import { BoschOilPass } from '../shaders/BoschOilShader.js';
 import { PuzzleProgress, RING_START, LUTE_NOTES } from '../core/PuzzleProgress.js';
+import { FencesAndBounds } from './FencesAndBounds.js';
 
 const smooth = (a,b,x) => THREE.MathUtils.smoothstep(x,a,b);
 const colours = ['#bfcdb1','#d4dfe0','#11151c'].map(c => new THREE.Color(c));
@@ -20,6 +22,7 @@ export class TriptychWorld {
     this.sun = new THREE.DirectionalLight('#f9dfab',1.4); this.sun.position.set(-70,50,25);
     scene.add(this.hemisphere,this.sun);
     this.buildTerrain(); this.buildEden(); this.buildGarden(); this.buildHell(); this.buildShutters();
+    this.fences = new FencesAndBounds(scene);
     this.oil = new BoschOilPass(renderer,scene,camera);
     scene.userData.triptych = this;
   }
@@ -31,6 +34,7 @@ export class TriptychWorld {
     return object;
   }
   buildTerrain() {
+    const centerlines=PATH.map(segment=>({...segment,halfWidth:0}));
     const geometry = new THREE.PlaneGeometry(250,100,200,80).rotateX(-Math.PI/2);
     geometry.translate(-10,0,0);
     const vertices = geometry.attributes.position, colors = [];
@@ -38,7 +42,7 @@ export class TriptychWorld {
       const x = vertices.getX(i), z = vertices.getZ(i);
       vertices.setY(i,triptychHeight(x,z));
       const c = grounds[0].clone().lerp(grounds[1],smooth(-40,-30,x)).lerp(grounds[2],smooth(30,45,x));
-      const path = 1-smooth(1.5,3.6,Math.abs(z-26));
+      const path = 1-smooth(1.5,3.6,corridorDistance(x,z,centerlines));
       c.lerp(new THREE.Color(x > 40 ? '#56544b' : '#b6b18a'),path*0.42);
       c.multiplyScalar(0.94 + Math.sin(x*1.7+Math.cos(z*0.6))*0.025 + Math.cos(z*2.8)*0.02);
       colors.push(c.r,c.g,c.b);
@@ -55,7 +59,7 @@ export class TriptychWorld {
     for (let i = 0; i < 650; i++) {
       const x = -99 + (i*17.31)%131, z = -37+(i*11.97)%74;
       matrix.position.set(x,triptychHeight(x,z)+0.25,z); matrix.rotation.y=i*2.4;
-      matrix.scale.setScalar(Math.abs(z-26)<3 || Math.hypot(x,z)<18 ? 0 : 1);
+      matrix.scale.setScalar(corridorDistance(x,z,centerlines)<2 || Math.hypot(x,z)<18 ? 0 : 1);
       matrix.updateMatrix(); tufts.setMatrixAt(i,matrix.matrix);
     }
     this.scene.add(tufts);
@@ -150,7 +154,7 @@ export class TriptychWorld {
     const {lute,harp}=instruments();this.lute=this.place(lute,TRIPTYCH.lute,3);this.place(harp,TRIPTYCH.harp,3);
     const score=this.place(scorePlaque(),TRIPTYCH.score);
     this.score=score;
-    this.treeMan=this.place(treeMan(),TRIPTYCH.treeMan,4.5);
+    this.treeMan=this.place(treeMan(),TRIPTYCH.treeMan,1.8);
     this.throne=this.place(birdThrone(),TRIPTYCH.throne,2.5);
     for(const [x,z,color] of [[62,12,'#b77347'],[80,-8,'#c07c49'],[95,8,'#8ba8b9']]) {
       const light=new THREE.PointLight(color,100,30,2);light.position.set(x,triptychHeight(x,z)+7,z);this.scene.add(light);
@@ -215,8 +219,9 @@ export class TriptychWorld {
       {object:this.dragonFruit,radius:5,prompt:()=>state.decisions.ateDragonFruit===null?'E · eat dragon fruit / Q · refuse':'The dragon fruit choice is recorded.',onPrimary:()=>{
         const text=choose('ateDragonFruit',true,'You taste the first sweetness.');this.dragonFruit.visible=state.decisions.ateDragonFruit!==true;return text;
       },onSecondary:()=>choose('ateDragonFruit',false,'You leave the fruit upon its branch.')},
-      {object:this.glass,radius:6,prompt:()=>state.puzzlesCompleted.gardenBubble?'The glass remembers your touch.':'E · touch the glass sphere',onPrimary:()=>{
+      {object:this.glass,radius:6,prompt:()=> 'E · board the bubble to the strawberry platform',onPrimary:()=>{
         if(!state.puzzlesCompleted.gardenBubble){state.completePuzzle('gardenBubble');this.bubbleOpened=true;sound.bell(880);}
+        this.onBubble?.();
         return 'A transparent boundary is still a boundary.';
       }},
       {object:this.fruit,radius:8,prompt:()=>`E · peel strawberry (${p.peeled}/8)`,onPrimary:()=>{
@@ -255,6 +260,7 @@ export class TriptychWorld {
   }
   update(dt) {
     this.time+=dt;
+    this.fences.update(dt);
     if(this.opening && this.opening.elapsed<3) {
       const o=this.opening;o.elapsed=Math.min(3,o.elapsed+dt);
       const swing=smooth(0,1.5,o.elapsed);

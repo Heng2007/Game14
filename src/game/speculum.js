@@ -1,19 +1,20 @@
 import { GameState } from '../core/GameState.js';
 import { FirstPersonController } from '../core/FirstPersonController.js';
 import * as audio from '../core/audio.js';
-import { TRIPTYCH, triptychHeight, triptychBlocked, zoneAtX } from '../shared/positions.js';
+import { TRIPTYCH, PATH_SPAWNS, pathHeight, triptychBlocked, zoneAtX } from '../shared/positions.js';
 import { DiegeticText } from '../narrative/DiegeticText.js';
 import { NarrativeTriggers, OPENING_LINE } from '../narrative/script.js';
 import { SoundManager } from '../audio/SoundManager.js';
 import { FinaleSequence } from '../core/FinaleSequence.js';
 import { OtterCompanion } from '../core/otter.js';
+import { BubbleRide } from '../core/BubbleRide.js';
 import './speculum.css';
 
 export const state = new GameState();
 export let controller;
 let world, hud, caption, entered = false;
 let diegetic, audioIndicator;
-let finale, startFinale, otter;
+let finale, startFinale, otter, bubbleRide;
 const OTTER_START = { x: TRIPTYCH.spawn.x + 4, z: TRIPTYCH.spawn.z + 1.5 };
 const THRONE_REACH = 6;
 const sound = new SoundManager();
@@ -36,7 +37,7 @@ export function init({ camera, renderer, scene, ui }) {
   camera.near=0.1;camera.updateProjectionMatrix();
   camera.position.set(-126,8,26);camera.rotation.set(0,-Math.PI/2,0);
   controller=new FirstPersonController(camera,renderer.domElement,{
-    getHeight:triptychHeight,bounds:TRIPTYCH.bounds,obstacles:world.obstacles,blocked:triptychBlocked,
+    getHeight:pathHeight,bounds:TRIPTYCH.bounds,obstacles:world.obstacles,blocked:triptychBlocked,corridor:world.fences,
   });
   ui.innerHTML=`
     <div class="sm-hud"><span>SPECULUM MUNDI</span><h2>I · The Garden of Eden</h2><p>INNOCENCE / THE FIRST LIGHT</p></div>
@@ -64,7 +65,9 @@ export function init({ camera, renderer, scene, ui }) {
   const prompt=ui.querySelector('.sm-prompt'),ending=ui.querySelector('.sm-finale');
   diegetic=new DiegeticText(scene,camera,audio.narrator,caption);
   world.configureGameplay(state,sound);
-  otter=new OtterCompanion(scene,{getHeight:triptychHeight,obstacles:world.obstacles,bounds:TRIPTYCH.bounds});
+  bubbleRide=new BubbleRide(camera,controller,world.glass);
+  world.onBubble=()=>bubbleRide.start();
+  otter=new OtterCompanion(scene,{getHeight:pathHeight,obstacles:world.obstacles,bounds:TRIPTYCH.bounds});
   otter.reset(OTTER_START.x,OTTER_START.z);
   audio.narrator.addEventListener('line-start',()=>{sound.ducked=true;});
   audio.narrator.addEventListener('line-end',()=>{sound.ducked=false;});
@@ -99,7 +102,7 @@ export function init({ camera, renderer, scene, ui }) {
   ui.querySelector('.sm-again').addEventListener('click',()=>{
     entered=false;ending.hidden=true;resume.hidden=true;status.textContent='';prompt.textContent='';
     state.reset();triggers.reset();audio.narrator.reset();diegetic.clear();sound.stop();sound.ducked=false;
-    world.resetGameplay();finale.reset();otter.reset(OTTER_START.x,OTTER_START.z);controller.keys.clear();controller.velocity.set(0,0,0);
+    bubbleRide.reset();world.resetGameplay();finale.reset();otter.reset(OTTER_START.x,OTTER_START.z);controller.keys.clear();controller.velocity.set(0,0,0);
     camera.fov=60;camera.updateProjectionMatrix();camera.position.set(-126,8,26);camera.rotation.set(0,-Math.PI/2,0);
     menu.hidden=false;ui.classList.add('sm-at-shutters');open();
   });
@@ -113,12 +116,12 @@ export function init({ camera, renderer, scene, ui }) {
   controller.addEventListener('secondary',()=>{if(entered&&!finale.active)audio.speak(world.interact(camera.position,true),{zone:state.currentZone});});
   controller.addEventListener('mute',()=>{status.textContent=audio.toggleMute()?'Voice muted · subtitles remain on':'Voice restored';});
   document.addEventListener('keydown',event=>{
-    if(event.repeat||!entered||finale.active)return;
+    if(event.repeat||!entered||finale.active||bubbleRide.active)return;
     // Developer shortcuts (npm run dev only): 7/8/9 jump to an act, 0 starts the finale.
     if(import.meta.env.DEV&&event.code==='Digit0'){startFinale();return;}
-    const destination=import.meta.env.DEV&&{Digit7:TRIPTYCH.spawn,Digit8:{x:-29,z:26},Digit9:{x:43,z:26}}[event.code];
+    const destination=import.meta.env.DEV&&PATH_SPAWNS[event.code];
     if(destination){
-      controller.keys.clear();controller.velocity.set(0,0,0);camera.position.set(destination.x,triptychHeight(destination.x,destination.z)+1.7,destination.z);
+      controller.keys.clear();controller.velocity.set(0,0,0);camera.position.set(destination.x,pathHeight(destination.x,destination.z)+1.7,destination.z);
       camera.rotation.set(0,-Math.PI/2,0);setZone(zoneAtX(destination.x));return;
     }
     if(!controller.controls.isLocked)return;
@@ -130,7 +133,7 @@ export function init({ camera, renderer, scene, ui }) {
     menu.hidden=true;entered=true;ui.classList.remove('sm-at-shutters');setZone('ACT_II_GARDEN');
     ui.querySelector('.sm-controls').textContent='STUDY MODE · DRAG TO ORBIT / SCROLL TO ZOOM';
   }
-  if(import.meta.env.DEV)window.__speculum={state,controller,renderer,world,narrator:audio.narrator,diegetic,triggers,sound,finale,otter};
+  if(import.meta.env.DEV)window.__speculum={state,controller,renderer,world,narrator:audio.narrator,diegetic,triggers,sound,finale,otter,bubbleRide};
 }
 export function update(dt) {
   audio.narrator.update();diegetic?.update(dt);
@@ -143,6 +146,7 @@ export function update(dt) {
   // The otter follows while you walk; it waits at the gate and watches the finale.
   otter?.update(dt,entered&&!finale.active?controller.camera:null);
   if(!entered)return;
+  if(bubbleRide.active){bubbleRide.update(dt);sound.update(controller.camera.position.x);return;}
   // The throne blocks walking within about 3 m, so the ending starts a little further out.
   if(!finale.active&&Math.hypot(controller.camera.position.x-TRIPTYCH.throne.x,controller.camera.position.z-TRIPTYCH.throne.z)<THRONE_REACH)startFinale();
   if(finale.active){finale.update(dt);sound.update(controller.camera.position.x);return;}

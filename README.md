@@ -64,6 +64,18 @@ finale. These shortcuts are left out of the production build.
 
 ## Where things are
 
+The lantern-lit, fenced trail links the vignettes. The Garden's diagonal bridges
+reach the Owl island; its west-shore glass bubble carries you to the strawberry
+when you press E. Walking is locked during the ten-second crossing. You can also
+return to the island and use the southeast bridge instead. In Hell, follow the
+narrow ice bridge and the wooden ramps through the Tree-Man's candlelit tavern.
+Play Again restores the bubble to its dock along with every puzzle and choice.
+
+Corridor capsules in `PATH` (`src/shared/positions.js`) drive both the procedural
+barriers and collision. Movement uses a 0.45 m body margin, oriented fence boxes,
+water rejection and 25 ms collision substeps. Debug 7/8/9 land on the fenced trail;
+0 starts the scripted finale rather than teleporting into navigable terrain.
+
 | Path | What it is |
 | --- | --- |
 | `src/main.js` | Renderer, camera, frame loop; picks the game from the link |
