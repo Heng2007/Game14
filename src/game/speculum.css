@@ -4,7 +4,11 @@
 .sm-hud h2 { font-size: 30px; font-weight: normal; margin: 12px 0; }
 .sm-hud p { font: 9px sans-serif; letter-spacing: .23em; }
 .sm-crosshair { position: absolute; top: 50%; left: 50%; opacity: .7; font-size: 18px; }
-.sm-caption { position: absolute; bottom: 86px; left: 15%; width: 70%; text-align: center; font-style: italic; font-size: 20px; text-shadow: 0 1px 8px #283f3e; }
+.sm-caption { position: absolute; bottom: 76px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 78%; box-sizing: border-box; text-align: center; font-size: 20px; line-height: 1.6; color: #e7ddc8; border-radius: 3px; }
+.sm-caption.sm-narrating { padding: 10px 22px; background: #131c21e8; border-bottom: 1px solid #d3b47766; }
+.sm-caption .sm-spoken { color: #fff2d4; }
+.sm-caption .sm-speaking { color: #fff; text-decoration: underline; text-decoration-color: #d9969d; text-underline-offset: 5px; }
+.sm-status { position: absolute; right: 30px; top: 36px; font: 12px sans-serif; color: #eee1bc; text-shadow: 0 1px 4px #162420; }
 .sm-controls { position: absolute; bottom: 30px; width: 100%; text-align: center; font: 10px sans-serif; letter-spacing: .12em; color: #fff5db; text-shadow: 0 1px 4px #283f3e; }
 .sm-menu { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: auto; overflow: hidden; }
 .sm-menu[hidden], .sm-resume[hidden] { display: none; }
