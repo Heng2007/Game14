@@ -6,7 +6,9 @@ the three panels of the painting: Eden, the Garden, and Hell. A narrator speaks
 as you walk, small puzzles and three choices shape the epilogue, and an otter
 with a laptop keeps you company the whole way.
 
-Runs on localhost. No server, no accounts.
+**Play it:** https://heng2007.github.io/Game14/
+
+No server, no accounts. It also runs on localhost (see below).
 
 ## Run it
 
@@ -80,7 +82,13 @@ All art is built in code or shipped as small `.glb` files. The background
 music is `public/audio/garden-of-unseen-things.mp3`; every other sound is
 generated in the browser.
 
+## Deploying
+
+The live site is GitHub Pages, served from the `gh-pages` branch. That branch
+holds only the built files. To update it, build with
+`npx vite build --base=/Game14/` and replace the contents of `gh-pages` with
+the contents of `dist/`. Merging into `main` does not update the live site.
+
 ## Later (not now)
 
-- Putting it online.
 - Touch controls for phones.
