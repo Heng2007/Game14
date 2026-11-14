@@ -15,6 +15,8 @@ Runs on localhost only for now. No server, no leaderboard, no multiplayer.
 
 ## Run it
 
+Nothing runs yet. Issue #4 creates the project. After that:
+
 ```
 npm install
 npm run dev
@@ -34,7 +36,7 @@ conflicts, each part edits only its own folders.
 | `public/models/` | Part 3 | The `.glb` model files |
 | `src/main.js`, `src/shared/`, `index.html`, `package.json` | Shared | Do not edit in a part branch; change them in a separate small pull request |
 
-The full rules are in issues #1, #2 and #3.
+The full rules are in issues #1, #2, #3 and #4.
 
 ## The game in one paragraph
 
@@ -114,9 +116,10 @@ the right size and facing the right way.
 
 ## Build order
 
-1. Part 2 with plain shapes, until a full run is playable.
-2. Part 3, one model at a time, swapping each plain shape for the real model.
-3. Part 1 shader and polish last, once the models are in place.
+1. Setup (#4): one person creates the project and the shared files. Small, and
+   it must be merged before Parts 1 and 2 start.
+2. Parts 1, 2 and 3 (#1, #2, #3) at the same time, each on its own branch.
+3. Merge all three and polish.
 
 ## Later (not now)
 
