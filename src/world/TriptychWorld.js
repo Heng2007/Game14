@@ -5,6 +5,7 @@ import {
   peelableStrawberry, instruments, scorePlaque, treeMan, birdThrone, paint, box, orb,
 } from '../core/procedural.js';
 import { BoschOilPass } from '../shaders/BoschOilShader.js';
+import { PuzzleProgress, RING_START, LUTE_NOTES } from '../core/PuzzleProgress.js';
 
 const smooth = (a,b,x) => THREE.MathUtils.smoothstep(x,a,b);
 const colours = ['#bfcdb1','#d4dfe0','#11151c'].map(c => new THREE.Color(c));
@@ -68,13 +69,16 @@ export class TriptychWorld {
     for(let i=0;i<streamVertices.count;i++)streamVertices.setY(i,triptychHeight(streamVertices.getX(i),streamVertices.getZ(i))+0.07);
     streamGeometry.computeVertexNormals();
     this.scene.add(new THREE.Mesh(streamGeometry,paint('#9bb5a4')));
-    const rings = this.place(stoneRings(),TRIPTYCH.rings);
+    const rings = this.rings = this.place(stoneRings(),TRIPTYCH.rings);
+    this.ringHandles=[];
     rings.userData.rings.forEach((ring,i) => {
       this.animations.push(ring.userData.update);
-      const handle = new THREE.Object3D(); handle.position.set(0,0,1.5+i*0.8); rings.add(handle);
-      this.interactables.push({object:handle,radius:5,onPrimary:() => { ring.rotate(); return `Stone ring ${i+1} turns one eighth of a circle.`; }});
+      const handle = new THREE.Object3D(), angle=i*Math.PI*2/3;
+      handle.position.set(Math.sin(angle)*(1.5+i*0.8),0,Math.cos(angle)*(1.5+i*0.8)); rings.add(handle);
+      this.ringHandles.push(handle);
     });
-    this.place(dragonTree(),TRIPTYCH.dragonTree,2);
+    const dragon=this.place(dragonTree(),TRIPTYCH.dragonTree,2);
+    this.dragonFruit=orb(dragon,'#c7484f',[0,2.3,1.8],[0.6,0.8,0.6]);
     for (const p of [{x:-91,z:-19},{x:-52,z:-28},{x:-85,z:13}]) {
       const tree = dragonTree(); tree.scale.setScalar(0.55); this.place(tree,p,1.5);
     }
@@ -95,13 +99,15 @@ export class TriptychWorld {
       group.rotation.y=bridge.rotY; this.place(group,bridge);
     }
     TRIPTYCH.towers.forEach((p,i) => this.place(organicSpire(i%2 ? '#97b4c4' : '#d9a5aa'),p,2.6));
-    const glass = bubble(4); this.place(glass,TRIPTYCH.sphere); glass.position.y+=4;
+    const glass = this.glass = bubble(4); this.place(glass,TRIPTYCH.sphere); glass.position.y+=4;
+    this.animations.push(()=>{glass.material.opacity=0.2+Math.sin(this.time*(this.bubbleOpened?4:1))*0.07;glass.scale.setScalar(this.bubbleOpened?1.06+Math.sin(this.time*3)*0.02:1);});
     const inside = new THREE.Group(); orb(inside,'#d9b7a1',[0,2,0],[0.45,1.3,0.4]); orb(inside,'#e2c8ad',[0,3.6,0],[0.45,0.5,0.45]);
     this.place(inside,TRIPTYCH.sphere);
-    const fruit = this.place(peelableStrawberry(),TRIPTYCH.strawberry,4.2);
-    this.interactables.push({object:fruit,radius:8,onPrimary:() => fruit.peel() ? 'A scarlet petal loosens. Sweetness has a hidden cost.' : 'The fruit is open; nothing remains concealed.'});
+    this.fruit = this.place(peelableStrawberry(),TRIPTYCH.strawberry,4.2);
     const central = fountain(); central.scale.setScalar(0.7); this.place(central,TRIPTYCH.owl,2.7);
-    const bird = owl(); bird.scale.setScalar(0.65); this.place(bird,TRIPTYCH.owl); bird.position.y=3.1;
+    const bird = this.owl = owl(); bird.scale.setScalar(0.65); this.place(bird,TRIPTYCH.owl); bird.position.y=3.1;
+    this.owlFlight=0;
+    this.animations.push(dt=>{if(this.owlShooed){this.owlFlight=Math.min(30,this.owlFlight+dt*3);bird.position.y=3.1+this.owlFlight;bird.position.z=TRIPTYCH.owl.z-this.owlFlight;bird.visible=this.owlFlight<30;}});
     this.buildMounts();
     for (let i=0;i<7;i++) {
       const sphere=bubble(0.5+i*0.14); this.place(sphere,{x:-10+i*3,z:-25}); sphere.position.y=3+i%3;
@@ -141,11 +147,11 @@ export class TriptychWorld {
       const line=box(cracks,'#b0bdb7',[Math.sin(a)*4,0.08,Math.cos(a)*4],[0.04,0.02,5+i%4]); line.rotation.y=a;
     }
     this.place(cracks,TRIPTYCH.frozenLake);
-    const {lute,harp}=instruments();this.place(lute,TRIPTYCH.lute,3);this.place(harp,TRIPTYCH.harp,3);
+    const {lute,harp}=instruments();this.lute=this.place(lute,TRIPTYCH.lute,3);this.place(harp,TRIPTYCH.harp,3);
     const score=this.place(scorePlaque(),TRIPTYCH.score);
-    this.interactables.push({object:score,radius:5,onPrimary:()=> 'D · F · E · A. Four notes remain where every song was broken.'});
-    this.place(treeMan(),TRIPTYCH.treeMan,4.5);
-    this.place(birdThrone(),TRIPTYCH.throne,4);
+    this.score=score;
+    this.treeMan=this.place(treeMan(),TRIPTYCH.treeMan,4.5);
+    this.place(birdThrone(),TRIPTYCH.throne,2.5);
     for(const [x,z,color] of [[62,12,'#b77347'],[80,-8,'#c07c49'],[95,8,'#8ba8b9']]) {
       const light=new THREE.PointLight(color,100,30,2);light.position.set(x,triptychHeight(x,z)+7,z);this.scene.add(light);
     }
@@ -193,6 +199,50 @@ export class TriptychWorld {
     this.opening=null;
   }
   open(onComplete) { if (!this.opening) this.opening={elapsed:0,onComplete}; }
+  setShutterAmount(amount) {
+    this.shutters[0].rotation.y=-amount*Math.PI/2;this.shutters[1].rotation.y=amount*Math.PI/2;
+  }
+  configureGameplay(state,sound) {
+    this.progress=new PuzzleProgress(state);
+    const p=this.progress;
+    this.interactables=this.ringHandles.map((object,i)=>({object,radius:3,prompt:()=>`E · turn ring ${i+1} · align all red stones north (${p.rings[i]}/8)`,onPrimary:()=>{
+      this.rings.userData.rings[i].rotate();const was=state.puzzlesCompleted.edenRings;
+      p.rotateRing(i);if(!was&&state.puzzlesCompleted.edenRings)sound.bell();
+      return state.puzzlesCompleted.edenRings?'Three circles agree. The river remembers.':`Stone ring ${i+1} turns one eighth of a circle.`;
+    }}));
+    const choose=(key,value,text)=>p.decide(key,value)?text:'That choice has already become part of the world.';
+    this.interactables.push(
+      {object:this.dragonFruit,radius:5,prompt:()=>state.decisions.ateDragonFruit===null?'E · eat dragon fruit / Q · refuse':'The dragon fruit choice is recorded.',onPrimary:()=>{
+        const text=choose('ateDragonFruit',true,'You taste the first sweetness.');this.dragonFruit.visible=state.decisions.ateDragonFruit!==true;return text;
+      },onSecondary:()=>choose('ateDragonFruit',false,'You leave the fruit upon its branch.')},
+      {object:this.glass,radius:6,prompt:()=>state.puzzlesCompleted.gardenBubble?'The glass remembers your touch.':'E · touch the glass sphere',onPrimary:()=>{
+        if(!state.puzzlesCompleted.gardenBubble){state.completePuzzle('gardenBubble');this.bubbleOpened=true;sound.bell(880);}
+        return 'A transparent boundary is still a boundary.';
+      }},
+      {object:this.fruit,radius:8,prompt:()=>`E · peel strawberry (${p.peeled}/8)`,onPrimary:()=>{
+        if(!this.fruit.peel())return 'The fruit is open; nothing remains concealed.';
+        p.peel();sound.bell(523.251+p.peeled*22);return 'A scarlet petal loosens. Sweetness has a hidden cost.';
+      }},
+      {object:this.owl,radius:6,prompt:()=>state.decisions.owlAction===null?'E · heed the owl / Q · shoo the owl':'The owl choice is recorded.',onPrimary:()=>choose('owlAction','heeded','You listen to a wisdom that offers no answer.'),onSecondary:()=>{
+        const text=choose('owlAction','shooed','The owl departs. Silence takes its place.');this.owlShooed=state.decisions.owlAction==='shooed';return text;
+      }},
+      {object:this.lute,radius:7,prompt:()=>`1 D · 2 F · 3 E · 4 A / play D F E A (${p.luteIndex}/4)`,onPrimary:()=> 'Four strings: 1 D, 2 F, 3 E, 4 A. Play D, F, E, A.',onNote:note=>{
+        sound.pluck(LUTE_NOTES[note-1]);const was=state.puzzlesCompleted.hellLute;const solved=p.pluck(note);if(!was&&solved)sound.bell(440);
+        return solved?'The broken song is whole.':`The lute answers. ${p.luteIndex} of four notes remembered.`;
+      }},
+      {object:this.score,radius:4,prompt:()=> 'E · read the score: D F E A',onPrimary:()=> 'D · F · E · A. Four notes remain where every song was broken.'},
+      {object:this.treeMan,radius:8,prompt:()=>state.decisions.candleAction===null?'E · keep the candle / Q · snuff the candle':'The candle choice is recorded.',onPrimary:()=>choose('candleAction','kept','You keep a little light for someone who has not arrived.'),onSecondary:()=>{
+        const text=choose('candleAction','snuffed','You let the candle go. Darkness is also a kind of shelter.');this.treeMan.userData.setCandle(state.decisions.candleAction!=='snuffed');return text;
+      }},
+    );
+    this.resetGameplay();
+  }
+  resetGameplay() {
+    this.progress?.reset();this.rings.userData.rings.forEach((ring,i)=>ring.userData.reset(RING_START[i]));
+    this.fruit.userData.reset();this.dragonFruit.visible=true;this.bubbleOpened=false;this.glass.scale.setScalar(1);
+    this.owlShooed=false;this.owlFlight=0;this.owl.visible=true;this.owl.position.set(TRIPTYCH.owl.x,3.1,TRIPTYCH.owl.z);
+    this.treeMan.userData.setCandle(true);this.time=0;this.opening=null;this.setShutterAmount(0);
+  }
   update(dt) {
     this.time+=dt;
     if(this.opening && this.opening.elapsed<3) {
@@ -215,11 +265,17 @@ export class TriptychWorld {
     this.oil.pass.uniforms.varnish.value.set('#f5e1b5').lerp(new THREE.Color('#c2bdaf'),hell);
     this.oil.pass.uniforms.strength.value=THREE.MathUtils.lerp(0.72,0.9,hell);
   }
-  interact(position) {
+  nearby(position, action) {
     const point=new THREE.Vector3();
-    const nearest=this.interactables.map(item=>({item,distance:item.object.getWorldPosition(point).distanceTo(position)}))
+    const nearest=this.interactables.filter(item=>!action||item[action]).map(item=>{
+      item.object.getWorldPosition(point);return {item,distance:Math.hypot(point.x-position.x,point.z-position.z)};
+    })
       .filter(({item,distance})=>distance<=item.radius).sort((a,b)=>a.distance-b.distance)[0];
-    return nearest?.item.onPrimary() ?? 'Walk closer to a stone ring, the scarlet fruit, or the four-note score.';
+    return nearest?.item;
+  }
+  interact(position,secondary=false) {
+    const item=this.nearby(position),action=secondary?'onSecondary':'onPrimary';
+    return item?.[action]?.() ?? (secondary?'You choose to observe. The world waits.':'Walk closer to a stone ring, the scarlet fruit, or the four-note score.');
   }
   render() {
     this.renderer.info.autoReset=false;this.renderer.info.reset();

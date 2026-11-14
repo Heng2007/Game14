@@ -22,3 +22,4 @@ export function toggleMute() {
   return narrator.muted;
 }
 export function getMasterGain() { return masterGain; }
+export function getContext() { return context; }

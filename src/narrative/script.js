@@ -13,6 +13,7 @@ export const SCRIPT = [
 
 export class NarrativeTriggers {
   constructor(lines = SCRIPT) { this.lines = lines; this.fired = new Set(); this.history = []; }
+  reset() { this.fired.clear(); this.history.length = 0; }
   update(position, onTrigger) {
     for (const line of this.lines) {
       if (this.fired.has(line.id) || Math.hypot(position.x - line.x, position.z - line.z) > line.radius) continue;

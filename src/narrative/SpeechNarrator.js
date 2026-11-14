@@ -86,9 +86,13 @@ export class SpeechNarrator extends EventTarget {
     this.emit('mute', { muted });
   }
   dispose() {
+    this.reset();
+    this.synth?.removeEventListener('voiceschanged', this.refreshVoices);
+  }
+  reset() {
     ++this.generation;
     this.synth?.cancel();
-    this.synth?.removeEventListener('voiceschanged', this.refreshVoices);
-    this.end('disposed');
+    this.end('reset');
+    this.current = null;
   }
 }

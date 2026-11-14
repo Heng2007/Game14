@@ -94,6 +94,7 @@ export function stoneRings() {
     }
     pivot.position.y = 0.3 + i * 0.1;
     let target = 0;
+    pivot.userData.reset = (tick = 0) => { target = tick * Math.PI / 4; pivot.rotation.y = target; };
     pivot.rotate = () => { target += Math.PI / 4; };
     pivot.userData.update = dt => { pivot.rotation.y = THREE.MathUtils.damp(pivot.rotation.y, target, 7, dt); };
     group.add(pivot); group.userData.rings.push(pivot);
@@ -145,6 +146,7 @@ export function peelableStrawberry() {
     pivot.add(skin); group.add(pivot);
     let peeled = false;
     pivot.userData.peel = () => { peeled = true; };
+    pivot.userData.reset = () => { peeled = false; skin.rotation.z = 0; skin.position.y = 5.2; };
     pivot.userData.update = dt => {
       skin.rotation.z = THREE.MathUtils.damp(skin.rotation.z, peeled ? -1.15 : 0, 3, dt);
       skin.position.y = THREE.MathUtils.damp(skin.position.y, peeled ? 1.5 : 5.2, 3, dt);
@@ -159,6 +161,7 @@ export function peelableStrawberry() {
     group.add(leaf);
   }
   let next = 0;
+  group.userData.reset = () => { next = 0; segments.forEach(s => s.userData.reset()); };
   group.peel = () => { if (next >= segments.length) return false; segments[next++].userData.peel(); return true; };
   group.userData.update = dt => segments.forEach(s => s.userData.update(dt));
   return group;
@@ -220,7 +223,8 @@ export function treeMan() {
     orb(group,'#a28765',[Math.sin(a)*1.1,7.3,Math.cos(a)*1.1],[0.2,0.3,0.2]);
   }
   const candle = new THREE.PointLight('#ed9d51',32,14,2); candle.position.set(0,8,0); group.add(candle);
-  orb(group,'#f4bc65',[0,7.6,0],[0.1,0.35,0.1]);
+  const flame = orb(group,'#f4bc65',[0,7.6,0],[0.1,0.35,0.1]);
+  group.userData.setCandle = lit => { candle.intensity = lit ? 32 : 0; flame.visible = lit; };
   return group;
 }
 export function birdThrone() {

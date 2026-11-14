@@ -33,4 +33,13 @@
 .sm-title small { font: 8px sans-serif; letter-spacing: .19em; color: #b9b49e; }
 .sm-opening { pointer-events: none; }.sm-opening .sm-left { transform: translateX(-100%); }.sm-opening .sm-right { transform: translateX(100%); }.sm-opening .sm-title { opacity: 0; }
 .sm-resume { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.sm-prompt { position: absolute; bottom: 52px; width: 100%; text-align: center; font: 13px Georgia, serif; color: #fff2d4; text-shadow: 0 1px 5px #111; }
+.sm-finale { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; background: linear-gradient(#0b13182b, #0b1318b8); pointer-events: auto; }
+.sm-finale[hidden] { display: none; }
+.sm-finale > div { max-width: 640px; padding: 32px; background: #111b20c9; border: 1px solid #b7a17466; }
+.sm-finale span { font: 10px sans-serif; letter-spacing: .3em; }
+.sm-finale h2 { font-size: 42px; font-weight: normal; margin: 16px 0; }
+.sm-finale p { font-size: 18px; line-height: 1.7; }
+.sm-again { padding: 16px 22px; border: 1px solid #b7a174; background: #283f3e; color: #eee1bc; font: 16px Georgia, serif; cursor: pointer; }
+.sm-again:hover { background: #456052; }
 @media (max-width: 640px) { .sm-hud { top: 20px; left: 20px; }.sm-controls { font-size: 8px; padding: 0 15px; box-sizing: border-box; line-height: 1.8; }.sm-caption { font-size: 17px; } }

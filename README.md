@@ -36,7 +36,10 @@ Core checks: `node --test`. No lint or typecheck stages are configured.
 `src/world/TriptychWorld.js` owns terrain, hinged grisaille shutters, landmarks,
 hybrid mount animation and nearby-object interactions. E rotates the nearest
 stone ring, peels a strawberry segment, or reads the four-note score. These are
-tactile vignettes, not completed puzzles; decision/puzzle flags remain untouched.
+tactile puzzles: align the three red ring markers north, touch the sphere, peel
+all eight fruit segments, and play the lute's score with **1 D / 2 F / 3 E / 4 A**.
+E/Q at the Dragon Tree, Owl and tavern candle record irreversible choices for
+this run. Nearby prompts describe each action. A wrong lute note resets the phrase.
 The central lake, island, diagonal bridges and rivers reuse the original layout
 proportions at 0.36 scale, with additional river crossings for a continuous path.
 The Hell lake is frozen and walkable; unfrozen Garden water blocks movement.
@@ -50,6 +53,24 @@ also uses diffuse shading, without specular highlights. Resize updates all targe
 `?legacy` bypasses the composer. In dev, `window.__speculum` exposes state,
 controller, renderer and world for diagnostics. The shutter click captures
 pointer lock while user activation is valid; movement starts after the entrance.
+
+## Sound and closing mirror
+
+`src/audio/SoundManager.js` synthesizes dawn fifths and filtered water noise,
+a detuned choral pad, and a sub-bass Hell drone in the shared Web Audio context.
+Fruit/glass interactions ring additive bells; lute strings excite filtered noise
+and pitched partials. Beds crossfade at panel borders and duck during narration.
+M mutes both sound and speech. No audio downloads or external recordings are used.
+
+Walking within four metres of the bird throne begins a fourteen-second return
+across the triptych. Movement and mouse look pause, the oak doors close, and an
+epilogue reflects all three choices, including any left unanswered. **Re-open the
+Triptych (Play Again)** resets state, puzzle props, narrative triggers and audio
+without reloading the page, then opens the doors again.
+
+Debug keys remain enabled: **7** Eden, **8** Garden, **9** Hell, **0** Finale.
+They work after entry; 0 starts the same closing sequence without visiting the
+throne. `window.__speculum` in dev also exposes sound diagnostics and finale phase.
 
 ## Original prototype notes (historical, legacy mode only)
 

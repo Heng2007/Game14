@@ -8,18 +8,21 @@ export class FirstPersonController extends EventTarget {
     this.controls = new PointerLockControls(camera, element);
     this.keys = new Set();
     this.velocity = new Vector3();
+    this.enabled = true;
     document.addEventListener('keydown', (event) => {
+      if (event.code === 'KeyM' && !event.repeat) { this.dispatchEvent(new Event('mute')); return; }
+      if (!this.enabled) return;
       if (!this.controls.isLocked) return;
       this.keys.add(event.code);
       if (event.repeat) return;
-      const action = { KeyE: 'primary', KeyQ: 'secondary', KeyM: 'mute' }[event.code];
+      const action = { KeyE: 'primary', KeyQ: 'secondary' }[event.code];
       if (action) this.dispatchEvent(new Event(action));
     });
     document.addEventListener('keyup', (event) => this.keys.delete(event.code));
     this.controls.addEventListener('unlock', () => { this.keys.clear(); this.velocity.set(0, 0, 0); });
     window.addEventListener('blur', () => { this.keys.clear(); this.velocity.set(0, 0, 0); });
     element.addEventListener('click', () => {
-      if (this.controls.isLocked) this.dispatchEvent(new Event('primary'));
+      if (this.enabled && this.controls.isLocked) this.dispatchEvent(new Event('primary'));
     });
   }
   lock() {
@@ -53,7 +56,7 @@ export class FirstPersonController extends EventTarget {
     position.y = this.getHeight(position.x, position.z) + this.eyeHeight;
   }
   update(dt) {
-    if (!this.controls.isLocked) return;
+    if (this.enabled === false || !this.controls.isLocked) return;
     dt = Math.min(dt, 0.05);
     const direction = new Vector3(Number(this.keys.has('KeyD')) - Number(this.keys.has('KeyA')), 0,
       Number(this.keys.has('KeyW')) - Number(this.keys.has('KeyS'))).normalize().multiplyScalar(4);

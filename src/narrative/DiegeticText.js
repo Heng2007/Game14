@@ -153,6 +153,11 @@ export class DiegeticText {
   }
   dispose() {
     for (const [name, handler] of Object.entries(this.handlers)) this.narrator.removeEventListener(name, handler);
+    this.clear();
+  }
+  clear() {
     for (const word of [...this.words]) this.remove(word);
+    this.activeId=null;this.subtitleUntil=undefined;this.subtitleWords=[];
+    this.subtitle.replaceChildren();this.subtitle.classList.remove('sm-narrating');this.subtitle.removeAttribute('aria-label');
   }
 }
