@@ -4,6 +4,11 @@ export function bedWeights(x) {
   return [(1-garden)*(1-hell), garden*(1-hell), hell];
 }
 
+// Background music: "Garden Of Unseen Things", looped under the soundscape.
+const MUSIC_FILE = 'audio/garden-of-unseen-things.mp3';
+const MUSIC_VOLUME = 0.3;
+let musicBytes = null; // downloaded once, reused on replay
+
 export class SoundManager {
   constructor() { this.context = null; this.beds = []; this.sources = []; this.nodes = []; this.shots = new Set(); this.ducked = false; }
   start(context, master) {
@@ -29,11 +34,27 @@ export class SoundManager {
     const choir=context.createBiquadFilter();choir.type='lowpass';choir.frequency.value=850;choir.Q.value=1.4;choir.connect(this.beds[1]);this.nodes.push(choir);
     for(const [frequency,detune] of [[146.8324,-9],[146.8324,9],[220,-6],[293.6648,7]])oscillator(1,'triangle',frequency,0.028,detune,choir);
     oscillator(2,'sine',36.7081,0.095);oscillator(2,'triangle',55,0.026);
+    this.musicGain=context.createGain();this.musicGain.gain.value=0;this.musicGain.connect(master);this.nodes.push(this.musicGain);
+    if(typeof context.decodeAudioData==='function')this.startMusic(context);
+  }
+  // Loads and loops the music. If the file is missing or can't be decoded, the game carries on without it.
+  async startMusic(context) {
+    try {
+      musicBytes??=fetch((import.meta.env?.BASE_URL??'/')+MUSIC_FILE).then(response=>{
+        if(!response.ok)throw new Error(`music: HTTP ${response.status}`);return response.arrayBuffer();
+      });
+      this.musicBuffer??=await context.decodeAudioData((await musicBytes).slice(0));
+      if(this.context!==context||!this.musicGain)return; // stopped while loading
+      const source=context.createBufferSource();source.buffer=this.musicBuffer;source.loop=true;
+      source.connect(this.musicGain);source.start();
+      this.sources.push({source,bed:'music'});this.nodes.push(source);
+    } catch { musicBytes=null; }
   }
   update(x) {
     if(!this.context)return;
     const now=this.context.currentTime;
     bedWeights(x).forEach((weight,i)=>this.beds[i].gain.setTargetAtTime(weight*(this.ducked?0.4:1),now,0.7));
+    this.musicGain?.gain.setTargetAtTime(MUSIC_VOLUME*(this.ducked?0.45:1),now,0.7); // quieter under the narrator
     this.waterFilter.frequency.setTargetAtTime(1550+Math.sin(now*0.7)*450,now,0.4);
   }
   oneShot(sources,nodes,duration) {
@@ -66,6 +87,6 @@ export class SoundManager {
   stop() {
     this.sources.forEach(({source})=>source.stop());
     for(const shot of this.shots){shot.sources.forEach(source=>{source.onended=null;try{source.stop();}catch{}});shot.nodes.forEach(node=>node.disconnect());}
-    this.shots.clear();this.nodes.forEach(node=>node.disconnect());this.sources=[];this.nodes=[];this.beds=[];this.context=null;
+    this.shots.clear();this.nodes.forEach(node=>node.disconnect());this.sources=[];this.nodes=[];this.beds=[];this.musicGain=null;this.context=null;
   }
 }

@@ -76,8 +76,9 @@ finale. These shortcuts are left out of the production build.
 | `src/shared/positions.js` | Map layout for both games |
 | `src/game/` (other files), `src/world/index.js`, `look.js`, `terrain.js`, `public/models/` | The riding game (`?legacy`): gameplay, meadow world, and `.glb` models |
 
-All art is built in code or shipped as small `.glb` files. All sound is
-generated in the browser. There are no image or audio files.
+All art is built in code or shipped as small `.glb` files. The background
+music is `public/audio/garden-of-unseen-things.mp3`; every other sound is
+generated in the browser.
 
 ## Later (not now)
 
