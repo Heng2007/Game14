@@ -192,7 +192,7 @@ export class TriptychWorld {
         if(!this.fruit.peel())return 'The fruit is open; nothing remains concealed.';
         p.peel();sound.bell(523.251+p.peeled*22);return 'A scarlet petal loosens. Sweetness has a hidden cost.';
       }},
-      {object:this.owl,radius:6,prompt:()=>state.decisions.owlAction===null?'E · heed the owl / Q · shoo the owl':'The owl choice is recorded.',onPrimary:()=>choose('owlAction','heeded','You listen to a wisdom that offers no answer.'),onSecondary:()=>{
+      {object:this.owl,radius:6,prompt:()=>state.decisions.owlAction===null?'E · shield the owl’s eyes / Q · stare into its pupils':'The owl choice is recorded.',onPrimary:()=>choose('owlAction','heeded','You listen to a wisdom that offers no answer.'),onSecondary:()=>{
         const text=choose('owlAction','shooed','The owl departs. Silence takes its place.');this.owlShooed=state.decisions.owlAction==='shooed';return text;
       }},
       {object:this.lute,radius:7,prompt:()=>`1 D · 2 F · 3 E · 4 A / play D F E A (${p.luteIndex}/4)`,onPrimary:()=> 'Four strings: 1 D, 2 F, 3 E, 4 A. Play D, F, E, A.',onNote:note=>{

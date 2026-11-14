@@ -8,7 +8,7 @@ export class BubbleRide {
   start(){
     if(this.active)return false;
     this.active=true;this.elapsed=0;this.from=this.camera.position.clone();
-    this.controller.enabled=false;this.controller.controls.enabled=false;
+    this.controller.enabled=false;
     this.controller.keys.clear();this.controller.velocity.set(0,0,0);return true;
   }
   update(dt){

@@ -46,6 +46,7 @@ test('deep water is blocked on foot; the locked bubble ride crosses it and reset
   const camera={position:new Vector3(-21,1.7,4)},controller={enabled:true,controls:{enabled:true},keys:new Set(['KeyW']),velocity:new Vector3(4,0,0)};
   const bubble={position:new Vector3(-21,4,4)},ride=new BubbleRide(camera,controller,bubble);
   assert.equal(ride.start(),true);assert.equal(ride.start(),false);assert.equal(controller.enabled,false);
+  assert.equal(controller.controls.enabled,true);
   let water=0;
   for(let i=0;i<99;i++){ride.update(0.1);if(triptychWater(camera.position.x,camera.position.z))water++;}
   assert.ok(water>0);ride.update(0.2);assert.equal(ride.active,false);assert.equal(controller.enabled,true);

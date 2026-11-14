@@ -8,6 +8,7 @@ import { SoundManager } from '../audio/SoundManager.js';
 import { FinaleSequence } from '../core/FinaleSequence.js';
 import { OtterCompanion } from '../core/otter.js';
 import { BubbleRide } from '../core/BubbleRide.js';
+import { FilterDirector } from '../shaders/FilterDirector.js';
 import './speculum.css';
 
 export const state = new GameState();
@@ -15,6 +16,7 @@ export let controller;
 let world, hud, caption, entered = false;
 let diegetic, audioIndicator;
 let finale, startFinale, otter, bubbleRide;
+let filters,previousLook,previousFilterTime;
 const OTTER_START = { x: TRIPTYCH.spawn.x + 4, z: TRIPTYCH.spawn.z + 1.5 };
 const THRONE_REACH = 6;
 const sound = new SoundManager();
@@ -65,6 +67,10 @@ export function init({ camera, renderer, scene, ui }) {
   const prompt=ui.querySelector('.sm-prompt'),ending=ui.querySelector('.sm-finale');
   diegetic=new DiegeticText(scene,camera,audio.narrator,caption);
   world.configureGameplay(state,sound);
+  filters=new FilterDirector(world.oil.pass.uniforms);previousLook=camera.quaternion.clone();
+  previousFilterTime=performance.now();
+  state.subscribe(value=>filters.observe(value));
+  Object.defineProperty(window,'__filters',{configurable:true,get:()=>filters.snapshot()});
   bubbleRide=new BubbleRide(camera,controller,world.glass);
   world.onBubble=()=>bubbleRide.start();
   otter=new OtterCompanion(scene,{getHeight:pathHeight,obstacles:world.obstacles,bounds:TRIPTYCH.bounds});
@@ -102,6 +108,7 @@ export function init({ camera, renderer, scene, ui }) {
   ui.querySelector('.sm-again').addEventListener('click',()=>{
     entered=false;ending.hidden=true;resume.hidden=true;status.textContent='';prompt.textContent='';
     state.reset();triggers.reset();audio.narrator.reset();diegetic.clear();sound.stop();sound.ducked=false;
+    filters.reset();
     bubbleRide.reset();world.resetGameplay();finale.reset();otter.reset(OTTER_START.x,OTTER_START.z);controller.keys.clear();controller.velocity.set(0,0,0);
     camera.fov=60;camera.updateProjectionMatrix();camera.position.set(-126,8,26);camera.rotation.set(0,-Math.PI/2,0);
     menu.hidden=false;ui.classList.add('sm-at-shutters');open();
@@ -111,9 +118,14 @@ export function init({ camera, renderer, scene, ui }) {
   controller.controls.addEventListener('unlock',()=>{resume.hidden=!entered||finale.active;});
   controller.addEventListener('primary',()=>{
     if(!entered||finale.active)return;
+    const target=world.nearby(camera.position,'onPrimary');
     const text=world.interact(camera.position);audio.speak(text,{zone:state.currentZone});
+    interactionFilter(target);
   });
-  controller.addEventListener('secondary',()=>{if(entered&&!finale.active)audio.speak(world.interact(camera.position,true),{zone:state.currentZone});});
+  controller.addEventListener('secondary',()=>{if(entered&&!finale.active){
+    const target=world.nearby(camera.position,'onSecondary');
+    audio.speak(world.interact(camera.position,true),{zone:state.currentZone});interactionFilter(target);
+  }});
   controller.addEventListener('mute',()=>{status.textContent=audio.toggleMute()?'Voice muted · subtitles remain on':'Voice restored';});
   document.addEventListener('keydown',event=>{
     if(event.repeat||!entered||finale.active||bubbleRide.active)return;
@@ -126,17 +138,30 @@ export function init({ camera, renderer, scene, ui }) {
     }
     if(!controller.controls.isLocked)return;
     const note=Number(event.code.match(/^Digit([1-4])$/)?.[1]);
-    if(note){const instrument=world.nearby(camera.position,'onNote');if(instrument)status.textContent=instrument.onNote(note);}
+    if(note){const instrument=world.nearby(camera.position,'onNote');if(instrument){status.textContent=instrument.onNote(note);filters.pulse('lute');}}
   });
   world.prompt=prompt;
   if(new URLSearchParams(location.search).has('fly')) {
     menu.hidden=true;entered=true;ui.classList.remove('sm-at-shutters');setZone('ACT_II_GARDEN');
     ui.querySelector('.sm-controls').textContent='STUDY MODE · DRAG TO ORBIT / SCROLL TO ZOOM';
   }
-  if(import.meta.env.DEV)window.__speculum={state,controller,renderer,world,narrator:audio.narrator,diegetic,triggers,sound,finale,otter,bubbleRide};
+  if(import.meta.env.DEV)window.__speculum={state,controller,renderer,world,narrator:audio.narrator,diegetic,triggers,sound,finale,otter,bubbleRide,filters};
+}
+function interactionFilter(item) {
+  if(!item)return;
+  const object=item.object;
+  filters.pulse(world.ringHandles.includes(object)?'ring':object===world.fruit?'fruit':object===world.lute?'lute':'touch');
 }
 export function update(dt) {
   audio.narrator.update();diegetic?.update(dt);
+  if(filters){
+    const now=performance.now(),filterDt=Math.min(.5,(now-previousFilterTime)/1000);previousFilterTime=now;
+    const camera=controller.camera,target=entered&&!finale.active?filters.selectTarget(world,camera):null;
+    filters.focus(target?.object,camera);
+    world.oil.filterTarget=bubbleRide.active?null:target?.object;
+    const angularSpeed=camera.quaternion.angleTo(previousLook)/Math.max(filterDt,.001);previousLook.copy(camera.quaternion);
+    filters.update(filterDt,{state,focus:Boolean(target),bubble:bubbleRide.active,pitch:camera.rotation.x,angularSpeed,x:camera.position.x,active:entered&&!finale.active});
+  }
   if(audioIndicator){
     const level=audio.getOutputLevel();
     audioIndicator.textContent=audio.narrator.muted?'Audio: OFF [M to Unmute]':'Audio: ON [M to Mute]';
