@@ -5,6 +5,7 @@ import { getHeight, isWater } from '../world/terrain.js';
 import {
   BRIDGES, BRIDGE_LENGTH, BRIDGE_WIDTH, FOUNTAIN, TOWERS, SCENERY, MAP_SIZE,
 } from '../shared/positions.js';
+import { STAND_INS } from '../shared/models.js';
 import { isDown, wasPressed, consumeTriple } from './input.js';
 
 export const START = { x: 30, z: 70, heading: Math.atan2(-30, -70) };
@@ -24,16 +25,41 @@ const OBSTACLES = [
   ...SCENERY.map((s) => ({ x: s.x, z: s.z, r: RADIUS[s.name] ?? 1.5 })),
 ];
 
+// Bridge-local coords of (x, z) on bridge b, or null when outside it.
+// `along` runs down the bridge's long axis, `across` across its width.
+function bridgeLocal(b, x, z) {
+  const dx = x - b.x, dz = z - b.z;
+  const along = dx * Math.sin(b.rotY) + dz * Math.cos(b.rotY);
+  const across = dx * Math.cos(b.rotY) - dz * Math.sin(b.rotY);
+  if (Math.abs(along) > BRIDGE_LENGTH / 2 || Math.abs(across) > BRIDGE_WIDTH / 2 + 0.3) return null;
+  return { along, across };
+}
+
 // True if (x, z) is on a bridge. isWater() ignores bridges, so we check here.
 export function onBridge(x, z) {
-  return BRIDGES.some((b) => {
-    const dx = x - b.x, dz = z - b.z;
-    const along = dx * Math.sin(b.rotY) + dz * Math.cos(b.rotY);
-    const across = dx * Math.cos(b.rotY) - dz * Math.sin(b.rotY);
-    return Math.abs(along) <= BRIDGE_LENGTH / 2 && Math.abs(across) <= BRIDGE_WIDTH / 2 + 0.3;
-  });
+  return BRIDGES.some((b) => bridgeLocal(b, x, z) !== null);
 }
 export const blocked = (x, z) => isWater(x, z) && !onBridge(x, z);
+
+const BRIDGE_DECK = STAND_INS.bridge[0][1]; // bridge slab thickness, metres
+
+// Height to stand on: terrain, or the bridge deck top while on a bridge.
+// game/index.js places each bridge at getHeight(its centre), so the deck top
+// is getHeight(centre) + slab thickness. The factor ramps to 0 at the bridge
+// edges and ends so stepping on/off never pops.
+export function walkHeight(x, z) {
+  const ground = getHeight(x, z);
+  for (const b of BRIDGES) {
+    const l = bridgeLocal(b, x, z);
+    if (!l) continue;
+    const acrossF = Math.min(1, Math.max(0, (BRIDGE_WIDTH / 2 + 0.3 - Math.abs(l.across)) / 0.6));
+    const alongF = Math.min(1, Math.max(0, (BRIDGE_LENGTH / 2 - Math.abs(l.along)) / 2));
+    const f = acrossF * alongF;
+    if (f <= 0) continue;
+    return ground + (getHeight(b.x, b.z) + BRIDGE_DECK - ground) * f;
+  }
+  return ground;
+}
 
 export function createPlayer() {
   const p = {};
@@ -109,7 +135,7 @@ export function updatePlayer(p, dt) {
   }
 
   // Height
-  const ground = getHeight(p.x, p.z);
+  const ground = walkHeight(p.x, p.z);
   if (p.flying) {
     p.flyLeft -= dt;
     // Keep flying until we are over land, so we never land in the water.
