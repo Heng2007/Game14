@@ -13,6 +13,29 @@ Runs on localhost only for now. No server, no leaderboard, no multiplayer.
 - **Meshy** to generate the 3D models, exported as `.glb` files.
 - Browser built-in audio (Web Audio) for sound and music.
 
+## Run it
+
+```
+npm install
+npm run dev
+```
+
+Open the localhost link it prints. Add `?fly` to the link for a free camera.
+
+## Who owns which files
+
+The three parts are built at the same time, each on its own branch. To avoid
+conflicts, each part edits only its own folders.
+
+| Path | Owner | What it is |
+| --- | --- | --- |
+| `src/world/` , `public/textures/` | Part 1 | Ground, sky, water, the painted look |
+| `src/game/` , `public/audio/` | Part 2 | Player, camera, fruit, score, menus, sound |
+| `public/models/` | Part 3 | The `.glb` model files |
+| `src/main.js`, `src/shared/`, `index.html`, `package.json` | Shared | Do not edit in a part branch; change them in a separate small pull request |
+
+The full rules are in issues #1, #2 and #3.
+
 ## The game in one paragraph
 
 The player starts on the meadow riding a Bosch-style mount. Giant berries and
@@ -29,7 +52,6 @@ game its identity.
 - [ ] Ground: rolling green meadow with a round lake in the middle and four
       rivers running out of it.
 - [ ] Sky: pale blue fading to cream at the horizon, with distant blue hills.
-- [ ] Place the Meshy models (from Part 3) around the map.
 - [ ] Painted-look shader: flat, soft colours with fine dark outlines and a
       faint cracked-oil-paint texture over the whole screen, so models look
       like the painting and not like plastic.
@@ -52,7 +74,9 @@ before any art exists.
 - [ ] Camera that follows behind the player and stays above the ground.
 - [ ] Collisions: the player cannot pass through the fountain, towers, or
       large models, and cannot ride into the lake except on the bridges.
-- [ ] Fruit: spawn around the map, pick up on touch, show how many are carried.
+- [ ] Put the models on the map at the positions in `src/shared/positions.js`.
+- [ ] Fruit: spawn around the map, bob gently, pick up on touch, show how many
+      are carried.
 - [ ] Delivery: entering the fountain turns carried fruit into score.
 - [ ] Screens: start menu (Play), in-game counter, finish screen
       (score, Play again).
@@ -72,7 +96,8 @@ The objects that fill the world. Each one is generated in Meshy, exported as
 - [ ] Giant fruit: strawberry, cherry, blackberry (the things you collect).
 - [ ] The mount: a Bosch-style creature to ride.
 - [ ] The player figure.
-- [ ] Scenery: giant birds, glass spheres, shells, odd trees, small bridges.
+- [ ] Bridge across the lake.
+- [ ] Scenery: giant bird, glass sphere, shell, odd tree.
 
 Rules for every model:
 
