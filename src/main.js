@@ -9,7 +9,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as world from './world/index.js';
-import * as game from './game/index.js';
+import * as legacyGame from './game/index.js';
+import * as speculum from './game/speculum.js';
+
+const legacy = new URLSearchParams(location.search).has('legacy');
+const game = legacy ? legacyGame : speculum;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -19,7 +23,7 @@ document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 2000);
 const ui = document.getElementById('ui');
-const ctx = { renderer, scene, camera, ui };
+const ctx = { renderer, scene, camera, ui, legacy };
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -40,9 +44,10 @@ async function start() {
     controls.maxPolarAngle = Math.PI / 2 - 0.02;
   }
 
-  const clock = new THREE.Clock();
+  const timer = new THREE.Timer();
   renderer.setAnimationLoop(() => {
-    const dt = Math.min(clock.getDelta(), 0.1); // seconds since last frame
+    timer.update();
+    const dt = Math.min(timer.getDelta(), 0.1); // seconds since last frame
     if (fly) controls.update();
     else game.update(dt);
     world.update(dt);

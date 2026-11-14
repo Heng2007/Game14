@@ -6,7 +6,7 @@ import {
   FOUNTAIN, TOWERS, BRIDGES, SCENERY, DELIVERY_RADIUS,
 } from '../shared/positions.js';
 import { getHeight } from '../world/terrain.js';
-import { createPlayer, resetPlayer, updatePlayer } from './player.js';
+import { createPlayer, resetPlayer, updatePlayer, walkHeight } from './player.js';
 import { createFruit } from './fruit.js';
 import { createUI } from './ui.js';
 import { wasPressed, endFrame } from './input.js';
@@ -46,7 +46,7 @@ function toggleMute() {
 
 function syncModels() {
   const p = player;
-  mountObject.position.set(p.mounted ? p.x : p.mount.x, p.mounted ? p.y : getHeight(p.mount.x, p.mount.z), p.mounted ? p.z : p.mount.z);
+  mountObject.position.set(p.mounted ? p.x : p.mount.x, p.mounted ? p.y : walkHeight(p.mount.x, p.mount.z), p.mounted ? p.z : p.mount.z);
   mountObject.rotation.y = p.mounted ? p.heading : p.mount.heading;
   const bob = Math.abs(Math.sin(time * 10)) * 0.12 * Math.min(1, Math.abs(p.speed) / 5) * (p.grounded ? 1 : 0);
   playerObject.position.set(p.x, p.y + (p.mounted ? MOUNT_SEAT : 0) + bob, p.z);
