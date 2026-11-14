@@ -127,8 +127,10 @@ function buildWater(scene) {
   scene.add(lake);
 
   // Rivers: four 8 m planes running from the lake edge past the map edge.
-  const length = MAP_SIZE / 2 - LAKE_RADIUS + 8;
-  const mid = LAKE_RADIUS - 4 + length / 2;
+  // They start exactly at LAKE_RADIUS so they never overlap the lake ring
+  // (coplanar surfaces would z-fight); the join is a sub-pixel hairline.
+  const length = MAP_SIZE / 2 + 5 - LAKE_RADIUS;
+  const mid = LAKE_RADIUS + length / 2;
   for (const [x, z, turn] of [[0, mid, 0], [0, -mid, 0], [mid, 0, 1], [-mid, 0, 1]]) {
     const river = new THREE.Mesh(
       new THREE.PlaneGeometry(RIVER_WIDTH, length, 4, 56).rotateX(-Math.PI / 2),
